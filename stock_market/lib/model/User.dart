@@ -12,4 +12,22 @@ class User {
     required this.balance,
     required this.createdAt,
   });
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'username': username,
+    'email': email,
+    'balance': balance,
+    'createdAt': createdAt,
+  };
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'],
+      username: json['username'],
+      email: json['email'],
+      balance: json['balance'],
+      createdAt: DateTime.parse(json['createdAt']),
+    );
+  }
+
 }
