@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mvc_pattern/mvc_pattern.dart';
 import 'package:stock_market/controller/register_controller.dart';
+import 'package:stock_market/views/Home.dart';
 import 'package:stock_market/views/Login.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -21,7 +22,11 @@ class _RegisterPageState extends StateMVC<RegisterPage> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  InputDecoration _fieldDecoration(String label, IconData icon, {String? errorText}) {
+  InputDecoration _fieldDecoration(
+    String label,
+    IconData icon, {
+    String? errorText,
+  }) {
     return InputDecoration(
       labelText: label,
       errorText: errorText,
@@ -37,8 +42,12 @@ class _RegisterPageState extends StateMVC<RegisterPage> {
     if (!mounted) return;
 
     if (success) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registration failed. Please try again.')),
       );
     }
   }
@@ -91,8 +100,7 @@ class _RegisterPageState extends StateMVC<RegisterPage> {
                       child: Column(
                         children: [
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: TextFormField(
                               onChanged: con.updateName,
                               textCapitalization: TextCapitalization.words,
@@ -105,8 +113,7 @@ class _RegisterPageState extends StateMVC<RegisterPage> {
                           ),
                           const Divider(height: 1, indent: 16, endIndent: 16),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: TextFormField(
                               onChanged: con.updateEmail,
                               keyboardType: TextInputType.emailAddress,
@@ -119,61 +126,61 @@ class _RegisterPageState extends StateMVC<RegisterPage> {
                           ),
                           const Divider(height: 1, indent: 16, endIndent: 16),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: TextFormField(
                               onChanged: con.updatePassword,
                               obscureText: _obscurePassword,
-                              decoration: _fieldDecoration(
-                                'Password',
-                                Icons.lock_outline,
-                                errorText: con.passwordError,
-                              ).copyWith(
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.grey,
-                                    size: 20,
+                              decoration:
+                                  _fieldDecoration(
+                                    'Password',
+                                    Icons.lock_outline,
+                                    errorText: con.passwordError,
+                                  ).copyWith(
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: Colors.grey,
+                                        size: 20,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscurePassword = !_obscurePassword;
+                                        });
+                                      },
+                                    ),
                                   ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                ),
-                              ),
                             ),
                           ),
                           const Divider(height: 1, indent: 16, endIndent: 16),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: TextFormField(
                               onChanged: con.updateConfirmPassword,
                               obscureText: _obscureConfirmPassword,
-                              decoration: _fieldDecoration(
-                                'Confirm password',
-                                Icons.lock_outline,
-                                errorText: con.confirmPasswordError,
-                              ).copyWith(
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscureConfirmPassword
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                    color: Colors.grey,
-                                    size: 20,
+                              decoration:
+                                  _fieldDecoration(
+                                    'Confirm password',
+                                    Icons.lock_outline,
+                                    errorText: con.confirmPasswordError,
+                                  ).copyWith(
+                                    suffixIcon: IconButton(
+                                      icon: Icon(
+                                        _obscureConfirmPassword
+                                            ? Icons.visibility_off
+                                            : Icons.visibility,
+                                        color: Colors.grey,
+                                        size: 20,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _obscureConfirmPassword =
+                                              !_obscureConfirmPassword;
+                                        });
+                                      },
+                                    ),
                                   ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscureConfirmPassword =
-                                          !_obscureConfirmPassword;
-                                    });
-                                  },
-                                ),
-                              ),
                             ),
                           ),
                         ],
@@ -185,7 +192,7 @@ class _RegisterPageState extends StateMVC<RegisterPage> {
                     SizedBox(
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: con.isLoading ? null : _handleRegister,
+                        onPressed: _handleRegister,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _primaryColor,
                           foregroundColor: Colors.white,
@@ -194,22 +201,13 @@ class _RegisterPageState extends StateMVC<RegisterPage> {
                             borderRadius: BorderRadius.circular(50),
                           ),
                         ),
-                        child: con.isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'Create Account',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
+                        child: const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),

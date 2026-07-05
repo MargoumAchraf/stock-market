@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:stock_market/Database/DatabaseHelper.dart';
 import 'package:stock_market/views/Login.dart';
 import 'package:stock_market/views/register.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseHelper.instance.database;
   runApp(const MyApp());
 }
 

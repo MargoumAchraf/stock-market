@@ -1,4 +1,6 @@
 import 'package:mvc_pattern/mvc_pattern.dart';
+import 'package:stock_market/Database/User_db.dart';
+import 'package:stock_market/model/SessionManager.dart';
 import 'package:stock_market/model/User.dart';
 
 class LoginController extends ControllerMVC {
@@ -48,10 +50,30 @@ class LoginController extends ControllerMVC {
       setState(() {});
       return false;
     }
-    print('Logging in with email: $email and password: $password');
-    print('Simulating network request...');
-    isLoading = true;
-    setState(() {});
-    return true;
+    try {
+      final user = await UserDB.loginUser(email, password);
+
+      if (user == null) {
+        isLoading = false;
+        passwordError = 'Invalid email or password';
+        setState(() {});
+        return false;
+      }
+
+      await SessionManager.saveSession(
+        userId: user['id'] as String, // change to `as String` if id is TEXT/UUID
+        username: user['username'] as String,
+        email: user['email'] as String,
+      );
+
+      isLoading = false;
+      setState(() {});
+      return true;
+    } catch (e) {
+      isLoading = false;
+      print(e);
+      setState(() {});
+      return false;
+    }
   }
 }

@@ -2,6 +2,7 @@ class User {
   final String id;
   final String username;
   final String email;
+  final String password;
   final double balance;
   final DateTime createdAt;
 
@@ -9,6 +10,7 @@ class User {
     required this.id,
     required this.username,
     required this.email,
+    required this.password,
     required this.balance,
     required this.createdAt,
   });
@@ -25,6 +27,7 @@ class User {
       id: json['id'],
       username: json['username'],
       email: json['email'],
+      password: json['password'],
       balance: json['balance'],
       createdAt: DateTime.parse(json['createdAt']),
     );

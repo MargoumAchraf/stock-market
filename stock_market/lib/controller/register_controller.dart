@@ -1,4 +1,6 @@
 import 'package:mvc_pattern/mvc_pattern.dart';
+import 'package:stock_market/Database/User_db.dart';
+import 'package:stock_market/model/SessionManager.dart';
 import 'package:stock_market/model/User.dart';
 
 class RegisterController extends ControllerMVC {
@@ -12,7 +14,7 @@ class RegisterController extends ControllerMVC {
   String confirmPassword = '';
   String? nameError;
   String? emailError;
-  String? passwordError;  
+  String? passwordError;
   String? confirmPasswordError;
   bool isLoading = false;
 
@@ -38,7 +40,8 @@ class RegisterController extends ControllerMVC {
 
   void updateConfirmPassword(String value) {
     confirmPassword = value;
-    if (confirmPasswordError != null) confirmPasswordError = _validateConfirmPassword(value);
+    if (confirmPasswordError != null)
+      confirmPasswordError = _validateConfirmPassword(value);
     setState(() {});
   }
 
@@ -60,6 +63,7 @@ class RegisterController extends ControllerMVC {
     if (value.length < 6) return 'Must be at least 6 characters';
     return null;
   }
+
   String? _validateConfirmPassword(String value) {
     if (value.isEmpty) return 'Please confirm your password';
     if (value != password) return 'Passwords do not match';
@@ -71,15 +75,40 @@ class RegisterController extends ControllerMVC {
     emailError = _validateEmail(email);
     passwordError = _validatePassword(password);
     confirmPasswordError = _validateConfirmPassword(confirmPassword);
-    if (nameError != null || emailError != null || passwordError != null || confirmPasswordError != null) {
+
+    if (nameError != null ||
+        emailError != null ||
+        passwordError != null ||
+        confirmPasswordError != null) {
       setState(() {});
       return false;
     }
-    print('Registering with name: $name, email: $email, password: $password');
-    print('Simulating network request...');
-    isLoading = true;
-    
-    return true;
-  }
 
+    isLoading = true;
+    setState(() {});
+
+    try {
+      final exists = await UserDB.emailExists(email);
+      if (exists) {
+        return false; 
+      }
+      final userId = await UserDB.registerUser(name, email, password);
+
+      await SessionManager.saveSession(
+        userId: userId.toString(),
+        username: name,
+        email: email,
+      );
+
+      isLoading = false;
+      setState(() {});
+
+      return true;
+    } catch (e) {
+      isLoading = false;
+      setState(() {});
+      print(e);
+      return false;
+    }
+  }
 }

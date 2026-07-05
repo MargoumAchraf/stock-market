@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mvc_pattern/mvc_pattern.dart';
 import 'package:stock_market/controller/login_controller.dart';
+import 'package:stock_market/views/Home.dart';
 import 'package:stock_market/views/register.dart';
 
 class LoginPage extends StatefulWidget {
@@ -14,9 +15,27 @@ class _LoginPageState extends StateMVC<LoginPage> {
     con = controller as LoginController;
   }
 
+
   late LoginController con;
 
   static const Color _primaryColor = Color(0xFF0066E6);
+
+    Future<void> _handleLogin() async {
+    final success = await con.login();
+
+    if (!mounted) return;
+
+    if (success) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomePage()));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Login failed. Please try again.')),
+      );
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -160,11 +179,7 @@ class _LoginPageState extends StateMVC<LoginPage> {
                           width: double.infinity,
                           height: 48,
                           child: ElevatedButton(
-                            onPressed: con.isLoading
-                                ? null
-                                : () async {
-                                    await con.login();
-                                  },
+                            onPressed:_handleLogin,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: _primaryColor,
                               foregroundColor: Colors.white,
