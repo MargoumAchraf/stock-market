@@ -18,6 +18,11 @@ class SessionManager {
     await prefs.setString(_keyEmail, email);
   }
 
+  static Future<String?> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    
+    return prefs.getString(_keyUserId);
+  }
   static Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_keyLoggedIn) ?? false;

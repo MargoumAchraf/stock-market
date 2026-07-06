@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:stock_market/Database/DatabaseHelper.dart';
+import 'package:stock_market/views/Home.dart';
 import 'package:stock_market/views/Login.dart';
 import 'package:stock_market/views/register.dart';
 Future<void> main() async {
@@ -15,9 +16,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Stock Market App',
-      initialRoute: '/login',
+      initialRoute: '/home',
       routes: {
-        // '/home': (context) => const HomePage(),
+        '/home': (context) => const HomePage(),
         // '/profile': (context) => const ProfilePage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),

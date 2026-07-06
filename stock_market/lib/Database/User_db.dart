@@ -36,7 +36,7 @@ static Future<bool> emailExists(String email) async {
       'username': username,
       'email': email,
       'password': hashPassword(password),
-      'balance': 10000.0,
+      'balance': 1000000.0,
       'createdAt': DateTime.now().toIso8601String(),
     });
   }
