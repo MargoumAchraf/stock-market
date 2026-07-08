@@ -1,4 +1,5 @@
 import 'package:mvc_pattern/mvc_pattern.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:stock_market/Database/User_db.dart';
 import 'package:stock_market/model/SessionManager.dart';
 import 'package:stock_market/model/User.dart';
@@ -75,7 +76,7 @@ class RegisterController extends ControllerMVC {
     emailError = _validateEmail(email);
     passwordError = _validatePassword(password);
     confirmPasswordError = _validateConfirmPassword(confirmPassword);
-
+    final normalizedEmail = email.trim().toLowerCase();
     if (nameError != null ||
         emailError != null ||
         passwordError != null ||
@@ -88,22 +89,41 @@ class RegisterController extends ControllerMVC {
     setState(() {});
 
     try {
-      final exists = await UserDB.emailExists(email);
+      final exists = await UserDB.emailExists(normalizedEmail);
+      print('Email exists: $exists');
       if (exists) {
-        return false; 
+        isLoading = false;
+        emailError = 'Trrrrrrrrrrrrrrrrrhis email is already registered';
+        setState(() {});
+        return false;
       }
-      final userId = await UserDB.registerUser(name, email, password);
+      final userId = await UserDB.registerUser(
+        name.trim(),
+        normalizedEmail,
+        password,
+      );
 
       await SessionManager.saveSession(
         userId: userId.toString(),
         username: name,
-        email: email,
+        email: normalizedEmail,
       );
 
       isLoading = false;
       setState(() {});
 
       return true;
+    } on DatabaseException catch (e) {
+      // Fallback safety net: catches a duplicate-email race if it
+      // somehow slips past the emailExists check above.
+      isLoading = false;
+      if (e.isUniqueConstraintError()) {
+        emailError = 'This email is already registered vvvvvvvvvvvv' ;
+      } else {
+        print(e);
+      }
+      setState(() {});
+      return false;
     } catch (e) {
       isLoading = false;
       setState(() {});

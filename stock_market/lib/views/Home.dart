@@ -35,9 +35,10 @@ class _HomePageState extends StateMVC<HomePage> {
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
-      return; // ← muhim: ma nkomplich fetchStocks() ila machi logged in
+      return;
     }
 
+    con.getUser();
     con.fetchStocks();
   }
 
@@ -78,7 +79,7 @@ class _HomePageState extends StateMVC<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'KaQuiz',
+                  'Stock Market',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 26,
@@ -88,28 +89,48 @@ class _HomePageState extends StateMVC<HomePage> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Good morning, Trader 👋',
+                  'Good morning, ${con.user?['username'] ?? 'invalid user'}',
                   style: TextStyle(color: Colors.orange.shade100, fontSize: 13),
                 ),
               ],
             ),
             Row(
               children: [
-                IconButton(
-                  icon: const Icon(
-                    Icons.notifications_outlined,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {},
-                ),
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.orange.shade200,
-                  child: const Text(
-                    'K',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                PopupMenuButton<String>(
+                  offset: const Offset(0, 45),
+                  onSelected: (value) async {
+                    if (value == 'logout') {
+                      await SessionManager.logout(); // clear session/token
+                      if (context.mounted) {
+                        Navigator.of(
+                          context,
+                        ).pushNamedAndRemoveUntil('/login', (route) => false);
+                      }
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout, size: 18),
+                          SizedBox(width: 8),
+                          Text('Log out'),
+                        ],
+                      ),
+                    ),
+                  ],
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.orange.shade200,
+                    child: Text(
+                      (con.user?['username'] as String?)?.isNotEmpty == true
+                          ? (con.user!['username'] as String)[0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -150,8 +171,8 @@ class _HomePageState extends StateMVC<HomePage> {
               style: TextStyle(color: Colors.white70, fontSize: 14),
             ),
             const SizedBox(height: 8),
-            const Text(
-              '\$1,000,000.00',
+            Text(
+             '\$ ${(con.user?['balance'] as double? ?? 0.0).toStringAsFixed(2)}',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,
@@ -159,41 +180,9 @@ class _HomePageState extends StateMVC<HomePage> {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _balanceStat('Today P&L', '+\$2,340.50', true),
-                _balanceStat('Total Return', '+3.2%', true),
-                _balanceStat('Open Positions', '5', null),
-              ],
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _balanceStat(String label, String value, bool? positive) {
-    Color valueColor = Colors.white;
-    if (positive == true) valueColor = Colors.greenAccent.shade100;
-    if (positive == false) valueColor = Colors.redAccent.shade100;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white60, fontSize: 11),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
-        ),
-      ],
     );
   }
 
@@ -305,40 +294,12 @@ class _HomePageState extends StateMVC<HomePage> {
                     ],
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '\$${(stock['price'] as double).toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: stock['positive']
-                            ? Colors.green.shade50
-                            : Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${stock['positive'] ? '+' : ''}${(stock['change'] as double).toStringAsFixed(2)}%',
-                        style: TextStyle(
-                          color: stock['positive']
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  '\$${(stock['price'] as double).toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
               ],
             ),
