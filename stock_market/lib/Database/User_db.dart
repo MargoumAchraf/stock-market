@@ -23,7 +23,7 @@ class UserDB {
     return result.isNotEmpty;
   }
 
-  static Future<int> registerUser(
+  static Future<String> registerUser(
     String username,
     String email,
     String password,
@@ -31,7 +31,7 @@ class UserDB {
     final id = Uuid().generateV4();
 
     final db = await DatabaseHelper.instance.database;
-    return db.insert('users', {
+    db.insert('users', {
       'id': id,
       'username': username,
       'email': email.trim().toLowerCase(),
@@ -39,6 +39,7 @@ class UserDB {
       'balance': 1000000.0,
       'createdAt': DateTime.now().toIso8601String(),
     });
+    return id;
   }
 
   static Future<Map<String, dynamic>?> loginUser(
@@ -70,6 +71,8 @@ class UserDB {
     final db = await DatabaseHelper.instance.database;
 
     final String? userId = await SessionManager.getUserId();
+    final String? name = await SessionManager.getUsername();
+    print('Username from session: $name'); // Debugging line
 
     print('User ID from session: $userId'); // Debugging line
     if (userId == null) {

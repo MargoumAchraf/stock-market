@@ -56,7 +56,7 @@ class _HomePageState extends StateMVC<HomePage> {
           ],
         ),
       ),
-      bottomNavigationBar: Footer(),
+      bottomNavigationBar: FooterBar(),
     );
   }
 

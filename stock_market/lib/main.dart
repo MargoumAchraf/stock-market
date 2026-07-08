@@ -8,6 +8,7 @@ Future<void> main() async {
   await DatabaseHelper.instance.database;
   runApp(const MyApp());
 }
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -17,6 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Stock Market App',
       initialRoute: '/home',
+      navigatorKey: navigatorKey,
       routes: {
         '/home': (context) => const HomePage(),
         // '/profile': (context) => const ProfilePage(),
