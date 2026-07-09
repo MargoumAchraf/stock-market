@@ -23,7 +23,7 @@ class FooterBar extends StatelessWidget {
 
     if (currentRoute == targetRoute) return; // ma dirich navigate l nafs page
 
-    navigatorKey.currentState?.pushReplacementNamed(targetRoute);
+    // navigatorKey.currentState?.pushReplacementNamed(targetRoute);
   }
 
   @override

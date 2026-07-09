@@ -11,10 +11,10 @@ class HomeController extends ControllerMVC {
   HomeController._();
   static HomeController? _this;
 
-  static const String baseUrl = "https://fair-drinks-sleep.loca.lt";
+  static const String baseUrl = "https://purple-monkeys-hide.loca.lt";
 
   static const Duration refreshInterval = Duration(
-    milliseconds: 5000,
+    milliseconds: 1000,
   ); // 5x/sec
 
   List<Map<String, dynamic>> stocks = [];
