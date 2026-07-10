@@ -2,8 +2,6 @@ import 'package:interactive_chart/interactive_chart.dart';
 
 enum Timeframe { day, week, month }
 
-/// Aggregates a list of daily [CandleData] (assumed chronological, oldest->newest)
-/// into weekly or monthly OHLC candles. Returns the input unchanged for [Timeframe.day].
 List<CandleData> aggregateCandles(List<CandleData> daily, Timeframe timeframe) {
   if (timeframe == Timeframe.day || daily.isEmpty) return daily;
 
@@ -14,7 +12,7 @@ List<CandleData> aggregateCandles(List<CandleData> daily, Timeframe timeframe) {
   int? bucketTimestamp;
 
   for (final c in daily) {
-    final date = DateTime.fromMillisecondsSinceEpoch(c.timestamp!, isUtc: true);
+    final date = DateTime.fromMillisecondsSinceEpoch(c.timestamp, isUtc: true);
     final key = _bucketKey(date, timeframe);
 
     if (key != currentBucketKey) {

@@ -4,6 +4,7 @@ import 'package:mvc_pattern/mvc_pattern.dart';
 import 'package:stock_market/Widget/footer.dart';
 import 'package:stock_market/controller/Home_controller.dart';
 import 'package:stock_market/model/SessionManager.dart';
+import 'package:stock_market/views/History.dart';
 import 'package:stock_market/views/Login.dart';
 
 class HomePage extends StatefulWidget {
@@ -38,7 +39,10 @@ class _HomePageState extends StateMVC<HomePage> {
       return;
     }
 
-    con.getUser();
+    if (con.user == null) {
+      await con.getUser();
+    }
+
     con.fetchStocks();
   }
 
@@ -172,7 +176,7 @@ class _HomePageState extends StateMVC<HomePage> {
             ),
             const SizedBox(height: 8),
             Text(
-             '\$ ${(con.user?['balance'] as double? ?? 0.0).toStringAsFixed(2)}',
+              '\$ ${(con.user?['balance'] as double? ?? 0.0).toStringAsFixed(2)}',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,
@@ -234,7 +238,6 @@ class _HomePageState extends StateMVC<HomePage> {
     }
 
     final stocks = con.stocks;
-
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: stocks.length,
@@ -244,7 +247,6 @@ class _HomePageState extends StateMVC<HomePage> {
           duration: Duration(milliseconds: 1000 + (index * 100)),
           child: Container(
             margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
@@ -256,52 +258,73 @@ class _HomePageState extends StateMVC<HomePage> {
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.orange.shade50,
-                  child: Text(
-                    stock['symbol'][0],
-                    style: TextStyle(
-                      color: Colors.orange.shade800,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => HistoryPage(symbol: stock['symbol']),
                     ),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Colors.orange.shade50,
+                        child: Text(
+                          stock['symbol'][0],
+                          style: TextStyle(
+                            color: Colors.orange.shade800,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              stock['symbol'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              stock['name'],
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
                       Text(
-                        stock['symbol'],
+                        '\$${(stock['price'] as double).toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        stock['name'],
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
                     ],
                   ),
                 ),
-                Text(
-                  '\$${(stock['price'] as double).toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );

@@ -11,7 +11,7 @@ class HomeController extends ControllerMVC {
   HomeController._();
   static HomeController? _this;
 
-  static const String baseUrl = "https://purple-monkeys-hide.loca.lt";
+  static const String baseUrl = "https://brave-adults-cheer.loca.lt";
 
   static const Duration refreshInterval = Duration(
     milliseconds: 1000,
@@ -132,6 +132,7 @@ class HomeController extends ControllerMVC {
     if (user == null) {
       print("No user found in session, skipping getUser.");
       await SessionManager.logout();
+      
       return null;
     }
     print("Fetched user: ${user!['username']} (${user!['email']})");
