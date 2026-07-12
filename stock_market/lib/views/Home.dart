@@ -43,7 +43,9 @@ class _HomePageState extends StateMVC<HomePage> {
       await con.getUser();
     }
 
-    con.fetchStocks();
+    await con.fetchStocks();
+
+    // Handle the case where fetchStocks fails
   }
 
   @override
@@ -207,7 +209,10 @@ class _HomePageState extends StateMVC<HomePage> {
               ),
             ),
             TextButton(
-              onPressed: con.fetchStocks,
+              onPressed: () async {
+                await con.fetchStocks();
+                 
+              },
               child: Text(
                 'Refresh',
                 style: TextStyle(color: Colors.orange.shade800),

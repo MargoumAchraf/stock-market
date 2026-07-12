@@ -11,7 +11,6 @@ class HistoryController extends ControllerMVC {
   List<CandleData> dailyData = [];
   List<CandleData> displayData = [];
   Timeframe timeframe = Timeframe.day;
-  bool darkMode = true;
   bool showAverage = false;
   bool loading = true;
   String? error;
@@ -41,8 +40,6 @@ class HistoryController extends ControllerMVC {
     timeframe = tf;
     _applyTimeframe();
   }
-
-  void toggleDarkMode() => setState(() => darkMode = !darkMode);
 
   void toggleAverage() {
     setState(() => showAverage = !showAverage);

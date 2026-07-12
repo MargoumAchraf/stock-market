@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:stock_market/Database/DatabaseHelper.dart';
-import 'package:stock_market/views/History.dart';
 import 'package:stock_market/views/Home.dart';
 import 'package:stock_market/views/Login.dart';
 import 'package:stock_market/views/register.dart';
@@ -22,7 +21,6 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       routes: {
         '/home': (context) => const HomePage(),
-      
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
       },

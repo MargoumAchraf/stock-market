@@ -1,17 +1,20 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mvc_pattern/mvc_pattern.dart';
+import 'package:path/path.dart';
 import 'package:stock_market/Database/User_db.dart';
 import 'package:stock_market/model/SessionManager.dart';
 import 'package:stock_market/model/User.dart';
+import 'package:stock_market/views/Login.dart';
 
 class HomeController extends ControllerMVC {
   factory HomeController() => _this ??= HomeController._();
   HomeController._();
   static HomeController? _this;
 
-  static const String baseUrl = "https://brave-adults-cheer.loca.lt";
+  static const String baseUrl = "https://ekidk9-ip-154-144-252-170.tunnelmole.net";
 
   static const Duration refreshInterval = Duration(
     milliseconds: 1000,
@@ -34,6 +37,10 @@ class HomeController extends ControllerMVC {
   Future<void> fetchStocks() async {
     if (!await SessionManager.isLoggedIn()) {
       print("User not logged in, skipping fetchStocks.");
+      isLoading = false;
+      setState(() {});
+      SessionManager.logout(); // Ensure user is logged out if not logged in
+     
       return;
     }
 
@@ -60,7 +67,7 @@ class HomeController extends ControllerMVC {
           final rateRes = await http.get(
             Uri.parse("$baseUrl/exchange_rate/$symbol"),
           );
-
+print('Fetching price for $symbol: ${rateRes.statusCode}');
           if (rateRes.statusCode != 200) return null;
 
           final rateData = jsonDecode(rateRes.body);

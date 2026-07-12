@@ -23,27 +23,15 @@ class HistoryView extends StateMVC<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: con.darkMode ? Brightness.dark : Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFF121212),
-      ),
-      home: Scaffold(
+    return Theme(
+      data: ThemeData(scaffoldBackgroundColor: const Color(0xFF121212)),
+      child: Scaffold(
         appBar: AppBar(
-          title: const Text("Interactive Chart Demo"),
-          actions: [
-            IconButton(
-              icon: Icon(con.darkMode ? Icons.dark_mode : Icons.light_mode),
-              onPressed: con.toggleDarkMode,
-            ),
-            IconButton(
-              icon: Icon(
-                con.showAverage ? Icons.show_chart : Icons.bar_chart_outlined,
-              ),
-              onPressed: con.toggleAverage,
-            ),
-          ],
+          title: Text(widget.symbol),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
         body: SafeArea(
           minimum: const EdgeInsets.all(24.0),
@@ -69,6 +57,13 @@ class HistoryView extends StateMVC<HistoryPage> {
       selected: {con.timeframe},
       onSelectionChanged: (selection) =>
           con.onTimeframeChanged(selection.first),
+      style: SegmentedButton.styleFrom(
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.orange.shade800,
+        selectedBackgroundColor: Colors.orange.shade800,
+        selectedForegroundColor: Colors.white,
+        side: BorderSide(color: Colors.orange.shade800),
+      ),
     );
   }
 
@@ -84,7 +79,10 @@ class HistoryView extends StateMVC<HistoryPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(onPressed: () => con.loadData(widget.symbol), child: const Text('Retry')),
+            ElevatedButton(
+              onPressed: () => con.loadData(widget.symbol),
+              child: const Text('Retry'),
+            ),
           ],
         ),
       );
