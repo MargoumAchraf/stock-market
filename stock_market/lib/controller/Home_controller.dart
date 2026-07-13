@@ -1,20 +1,17 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mvc_pattern/mvc_pattern.dart';
-import 'package:path/path.dart';
 import 'package:stock_market/Database/User_db.dart';
 import 'package:stock_market/model/SessionManager.dart';
 import 'package:stock_market/model/User.dart';
-import 'package:stock_market/views/Login.dart';
 
 class HomeController extends ControllerMVC {
   factory HomeController() => _this ??= HomeController._();
   HomeController._();
   static HomeController? _this;
 
-  static const String baseUrl = "https://ekidk9-ip-154-144-252-170.tunnelmole.net";
+  static const String baseUrl = "http://nfjolj-ip-154-144-252-168.tunnelmole.net";
 
   static const Duration refreshInterval = Duration(
     milliseconds: 1000,

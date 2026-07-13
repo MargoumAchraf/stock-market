@@ -21,8 +21,36 @@ class HistoryView extends StateMVC<HistoryPage> {
     con.loadData(widget.symbol);
   }
 
+  void _showFeedback() {
+    if (con.tradeSuccess != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(con.tradeSuccess!),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+        con.tradeSuccess = null;
+      });
+    }
+    if (con.tradeError != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(con.tradeError!),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+        con.tradeError = null;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    _showFeedback();
     return Theme(
       data: ThemeData(scaffoldBackgroundColor: const Color(0xFF121212)),
       child: Scaffold(
@@ -40,6 +68,8 @@ class HistoryView extends StateMVC<HistoryPage> {
               _buildTimeframeSelector(),
               const SizedBox(height: 12),
               Expanded(child: _buildChartArea()),
+              const SizedBox(height: 16),
+              _buildTradingPanel(),
             ],
           ),
         ),
@@ -120,6 +150,132 @@ class HistoryView extends StateMVC<HistoryPage> {
             ..color = Colors.purpleAccent,
         ],
       ),
+    );
+  }
+
+  Widget _buildTradingPanel() {
+    if (con.loading) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E1E1E),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _infoColumn('Solde', '\$${con.balance.toStringAsFixed(2)}'),
+              _infoColumn('Détenu', '${con.ownedQuantity}'),
+              _infoColumn(
+                'Prix actuel',
+                '\$${con.currentPrice.toStringAsFixed(2)}',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove_circle_outline,
+                    color: Colors.white70),
+                onPressed: con.decrementQuantity,
+              ),
+              Text(
+                '${con.tradeQuantity}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline,
+                    color: Colors.white70),
+                onPressed: con.incrementQuantity,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Total: \$${con.estimatedCost.toStringAsFixed(2)}',
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: con.tradeInProgress
+                      ? null
+                      : () => con.buy(widget.symbol),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF26A69A),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: con.tradeInProgress
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Acheter',
+                          style: TextStyle(color: Colors.white)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: con.tradeInProgress || con.ownedQuantity == 0
+                      ? null
+                      : () => con.sell(widget.symbol),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF5350),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: con.tradeInProgress
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Vendre',
+                          style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoColumn(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }

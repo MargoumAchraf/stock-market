@@ -5,15 +5,14 @@ class FooterBar extends StatelessWidget {
   const FooterBar({super.key});
 
   static const List<String> _routes = [
-    '/',
+    '/home',
     '/portfolio',
-    '/markets',
     '/profile',
   ];
 
   int _currentIndex(BuildContext context) {
     final currentRoute = ModalRoute.of(context)?.settings.name;
-    final index = _routes.indexOf(currentRoute ?? '/');
+    final index = _routes.indexOf(currentRoute ?? '/home');
     return index == -1 ? 0 : index;
   }
 
@@ -44,11 +43,6 @@ class FooterBar extends StatelessWidget {
           icon: Icon(Icons.pie_chart_outline),
           activeIcon: Icon(Icons.pie_chart),
           label: 'Portfolio',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.bar_chart_outlined),
-          activeIcon: Icon(Icons.bar_chart),
-          label: 'Markets',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),

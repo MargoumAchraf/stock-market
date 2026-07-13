@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stock_market/Database/DatabaseHelper.dart';
 import 'package:stock_market/views/Home.dart';
 import 'package:stock_market/views/Login.dart';
+import 'package:stock_market/views/portfolio.dart';
 import 'package:stock_market/views/register.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,7 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
+        '/portfolio': (context) => const portfolioPage(),
       },
     );
   }
