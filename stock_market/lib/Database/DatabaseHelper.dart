@@ -36,28 +36,32 @@ class DatabaseHelper {
     }
   }
 
-  Future _createDB(Database db, int version) async {
-    await db.execute('''
-      CREATE TABLE stocks (
-        id TEXT PRIMARY KEY,
-        symbol TEXT NOT NULL,
-        name TEXT NOT NULL,
-        price REAL NOT NULL,
-        changePercent REAL NOT NULL,
-        updatedAt TEXT NOT NULL
-      )
-    ''');
-    await db.execute('''
-      CREATE TABLE users (
-        id TEXT PRIMARY KEY,
-        username TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        balance REAL NOT NULL,
-        createdAt TEXT NOT NULL
-)
-''');
-  }
+Future _createDB(Database db, int version) async {
+  await db.execute('''
+    CREATE TABLE users (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password TEXT NOT NULL,
+      balance REAL NOT NULL,
+      createdAt TEXT NOT NULL
+    )
+  ''');
+  await db.execute('''
+    CREATE TABLE stocks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      symbol TEXT NOT NULL,
+      price REAL NOT NULL,
+      country INTEGER NOT NULL,
+      changePercent REAL NOT NULL,
+      updatedAt TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+    )
+  ''');
+}
 
   Future close() async {
     final db = await instance.database;

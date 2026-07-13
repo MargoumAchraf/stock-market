@@ -15,42 +15,17 @@ class HistoryView extends StateMVC<HistoryPage> {
   HistoryView() : super(HistoryController());
   HistoryController get con => controller as HistoryController;
 
+  // --- Local UI-only trade state (no controller logic) ---
+
+
   @override
   void initState() {
     super.initState();
     con.loadData(widget.symbol);
   }
 
-  void _showFeedback() {
-    if (con.tradeSuccess != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(con.tradeSuccess!),
-            backgroundColor: Colors.green.shade700,
-          ),
-        );
-        con.tradeSuccess = null;
-      });
-    }
-    if (con.tradeError != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(con.tradeError!),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-        con.tradeError = null;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    _showFeedback();
     return Theme(
       data: ThemeData(scaffoldBackgroundColor: const Color(0xFF121212)),
       child: Scaffold(
@@ -121,10 +96,10 @@ class HistoryView extends StateMVC<HistoryPage> {
 
     return InteractiveChart(
       key: ValueKey(con.timeframe),
-      candles: con.displayData,
+      candles: con.displayData.reversed.toList(),
       style: ChartStyle(
-        priceGainColor: const Color(0xFF26A69A),
         priceLossColor: const Color(0xFFEF5350),
+        priceGainColor: const Color(0xFF26A69A),
         volumeColor: Colors.transparent,
         priceGridLineColor: Colors.white.withOpacity(0.08),
         priceLabelStyle: const TextStyle(
@@ -169,8 +144,6 @@ class HistoryView extends StateMVC<HistoryPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _infoColumn('Solde', '\$${con.balance.toStringAsFixed(2)}'),
-              _infoColumn('Détenu', '${con.ownedQuantity}'),
               _infoColumn(
                 'Prix actuel',
                 '\$${con.currentPrice.toStringAsFixed(2)}',
@@ -211,47 +184,27 @@ class HistoryView extends StateMVC<HistoryPage> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: con.tradeInProgress
-                      ? null
-                      : () => con.buy(widget.symbol),
+                  onPressed: () async {
+                    await con.buy(widget.symbol);
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF26A69A),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: con.tradeInProgress
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Acheter',
-                          style: TextStyle(color: Colors.white)),
+                  child: const Text('Acheter',
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: con.tradeInProgress || con.ownedQuantity == 0
-                      ? null
-                      : () => con.sell(widget.symbol),
+                  onPressed: () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEF5350),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: con.tradeInProgress
-                      ? const SizedBox(
-                          height: 18,
-                          width: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Vendre',
-                          style: TextStyle(color: Colors.white)),
+                  child: const Text('Vendre',
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],

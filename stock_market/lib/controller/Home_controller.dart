@@ -11,7 +11,7 @@ class HomeController extends ControllerMVC {
   HomeController._();
   static HomeController? _this;
 
-  static const String baseUrl = "http://nfjolj-ip-154-144-252-168.tunnelmole.net";
+  static const String baseUrl = "http://mttoka-ip-154-144-252-170.tunnelmole.net";
 
   static const Duration refreshInterval = Duration(
     milliseconds: 1000,

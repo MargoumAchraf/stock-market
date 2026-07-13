@@ -3,10 +3,19 @@ import 'package:stock_market/Database/DatabaseHelper.dart';
 
 class StockDB {
   Future<Database> get _db async => DatabaseHelper.instance.database;
-
   Future<int> insert(Map<String, dynamic> stock) async {
     final db = await _db;
-    return db.insert('stocks', stock);
+
+    return await db.insert(
+      'stocks',
+      stock.entries.fold<Map<String, dynamic>>({}, (map, entry) {
+        if (entry.value != null) {
+          map[entry.key] = entry.value;
+        }
+        return map;
+      }),
+    );
+    
   }
 
   Future<List<Map<String, dynamic>>> getAll() async {
