@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 Future<List<CandleData>> fetchCandlesFromApi({
   required String symbol,
-  String baseUrl = 'http://mttoka-ip-154-144-252-170.tunnelmole.net',
+  String baseUrl = 'https://crusader-arming-riverboat.ngrok-free.dev',
 }) async {
   DateTime now = DateTime.now();
   DateTime lastYear = DateTime(now.year - 1, now.month, now.day);
@@ -18,16 +18,22 @@ Future<List<CandleData>> fetchCandlesFromApi({
 
   final response = await http.get(uri);
   print('Fetching candles for $symbol from $uri: ${response.statusCode}');
-  if (response.statusCode != 200) {
+
+  if (response.statusCode == 200) {
+    print('Successfully fetched candles for $symbol.');
+  } else {
     throw Exception(
       'Failed to load candles for $symbol: ${response.statusCode} ${response.reasonPhrase}',
     );
   }
 
+  if (response.statusCode != 200) {}
+
   return parseCandlesFromJson(response.body);
 }
 
 List<CandleData> parseCandlesFromJson(String jsonString) {
+  print('Parsing candle data from JSON...');
   final Map<String, dynamic> decoded = json.decode(jsonString);
   final List<dynamic> values = decoded['values'] as List<dynamic>;
 
@@ -63,8 +69,18 @@ List<CandleData> parseCandlesFromJson(String jsonString) {
 
 DateTime _parseGmtDate(String rfc1123) {
   const months = {
-    'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
-    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12,
+    'Jan': 1,
+    'Feb': 2,
+    'Mar': 3,
+    'Apr': 4,
+    'May': 5,
+    'Jun': 6,
+    'Jul': 7,
+    'Aug': 8,
+    'Sep': 9,
+    'Oct': 10,
+    'Nov': 11,
+    'Dec': 12,
   };
 
   final parts = rfc1123.split(' ');
@@ -73,5 +89,12 @@ DateTime _parseGmtDate(String rfc1123) {
   final year = int.parse(parts[3]);
   final timeParts = parts[4].split(':').map(int.parse).toList();
 
-  return DateTime.utc(year, month, day, timeParts[0], timeParts[1], timeParts[2]);
+  return DateTime.utc(
+    year,
+    month,
+    day,
+    timeParts[0],
+    timeParts[1],
+    timeParts[2],
+  );
 }

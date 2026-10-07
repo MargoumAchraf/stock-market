@@ -11,12 +11,20 @@ class HistoryPage extends StatefulWidget {
   State createState() => HistoryView();
 }
 
+class _TradeInfo {
+  final int quantity;
+  final double unitPrice;
+  final double total;
+  const _TradeInfo({
+    required this.quantity,
+    required this.unitPrice,
+    required this.total,
+  });
+}
+
 class HistoryView extends StateMVC<HistoryPage> {
   HistoryView() : super(HistoryController());
   HistoryController get con => controller as HistoryController;
-
-  // --- Local UI-only trade state (no controller logic) ---
-
 
   @override
   void initState() {
@@ -128,6 +136,113 @@ class HistoryView extends StateMVC<HistoryPage> {
     );
   }
 
+  /// Reads quantity, unit price and total from the controller.
+  _TradeInfo _readTradeInfo() {
+    return _TradeInfo(
+      quantity: con.tradeQuantity,
+      unitPrice: con.currentPrice,
+      total: con.estimatedCost,
+    );
+  }
+
+  /// Confirms, executes the trade, then resets the quantity and refreshes the view.
+  Future<void> _handleTrade({required bool isBuy}) async {
+    final confirmed = await _confirmTrade(isBuy: isBuy);
+    if (!confirmed || !mounted) return;
+
+    if (isBuy) {
+      await con.buy(widget.symbol);
+    } else {
+      await con.sell(widget.symbol);
+    }
+
+    if (!mounted) return;
+    con.resetQuantity();
+    setState(() {});
+  }
+
+  /// Shows a confirmation dialog before buying / selling.
+  /// Returns true if the user confirms.
+  Future<bool> _confirmTrade({required bool isBuy}) async {
+    final info = _readTradeInfo();
+    final actionLabel = isBuy ? 'Acheter' : 'Vendre';
+    final actionColor =
+        isBuy ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(
+          'Confirmer : $actionLabel',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _dialogRow('Symbole', widget.symbol),
+            _dialogRow('Quantité', '${info.quantity}'),
+            _dialogRow(
+              'Prix unitaire',
+              '\$${info.unitPrice.toStringAsFixed(2)}',
+            ),
+            const Divider(color: Colors.white24, height: 24),
+            _dialogRow(
+              'Total',
+              '\$${info.total.toStringAsFixed(2)}',
+              bold: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text(
+              'Annuler',
+              style: TextStyle(color: Colors.white70),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: actionColor),
+            child: const Text(
+              'Confirmer',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
+  }
+
+  Widget _dialogRow(String label, String value, {bool bold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white54, fontSize: 14),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: bold ? 16 : 14,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTradingPanel() {
     if (con.loading) return const SizedBox.shrink();
 
@@ -155,8 +270,10 @@ class HistoryView extends StateMVC<HistoryPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.remove_circle_outline,
-                    color: Colors.white70),
+                icon: const Icon(
+                  Icons.remove_circle_outline,
+                  color: Colors.white70,
+                ),
                 onPressed: con.decrementQuantity,
               ),
               Text(
@@ -168,8 +285,10 @@ class HistoryView extends StateMVC<HistoryPage> {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.add_circle_outline,
-                    color: Colors.white70),
+                icon: const Icon(
+                  Icons.add_circle_outline,
+                  color: Colors.white70,
+                ),
                 onPressed: con.incrementQuantity,
               ),
               const SizedBox(width: 12),
@@ -184,27 +303,29 @@ class HistoryView extends StateMVC<HistoryPage> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () async {
-                    await con.buy(widget.symbol);
-                  },
+                  onPressed: () => _handleTrade(isBuy: true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF26A69A),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text('Acheter',
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    'Acheter',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () => _handleTrade(isBuy: false),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFEF5350),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text('Vendre',
-                      style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    'Vendre',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],
@@ -218,7 +339,10 @@ class HistoryView extends StateMVC<HistoryPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white54, fontSize: 12),
+        ),
         const SizedBox(height: 4),
         Text(
           value,

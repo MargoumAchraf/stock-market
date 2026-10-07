@@ -7,7 +7,6 @@ class FooterBar extends StatelessWidget {
   static const List<String> _routes = [
     '/home',
     '/portfolio',
-    '/profile',
   ];
 
   int _currentIndex(BuildContext context) {
@@ -43,11 +42,6 @@ class FooterBar extends StatelessWidget {
           icon: Icon(Icons.pie_chart_outline),
           activeIcon: Icon(Icons.pie_chart),
           label: 'Portfolio',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profile',
         ),
       ],
     );

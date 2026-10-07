@@ -11,10 +11,10 @@ class HomeController extends ControllerMVC {
   HomeController._();
   static HomeController? _this;
 
-  static const String baseUrl = "http://mttoka-ip-154-144-252-170.tunnelmole.net";
+  static const String baseUrl = "https://crusader-arming-riverboat.ngrok-free.dev/";
 
   static const Duration refreshInterval = Duration(
-    milliseconds: 1000,
+    milliseconds: 5000,
   ); // 5x/sec
 
   List<Map<String, dynamic>> stocks = [];
