@@ -3,10 +3,13 @@ import 'package:stock_market/Database/DatabaseHelper.dart';
 import 'package:stock_market/model/Stock.dart';
 
 class StockDB {
+  /// The `country` column actually stores the quantity of shares.
+  static const String qtyColumn = 'country';
+
   Future<Database> get _db async => DatabaseHelper.instance.database;
+
   Future<int> insert(Map<String, dynamic> stock) async {
     final db = await _db;
-
     return await db.insert(
       'stocks',
       stock.entries.fold<Map<String, dynamic>>({}, (map, entry) {
@@ -23,72 +26,69 @@ class StockDB {
     return db.query('stocks');
   }
 
-// Stock_db.dart
-Future<Map<String, dynamic>?> getUserStock(String userId, String symbol) async {
-  final db = await DatabaseHelper.instance.database; // use whatever getter you already have
-  final rows = await db.query(
-    'stocks',
-    where: 'user_id = ? AND symbol = ?',
-    whereArgs: [userId, symbol],
-    limit: 1,
-  );
-  return rows.isEmpty ? null : rows.first;
-}
-
-Future<void> deleteStock(String id) async {
-  final db = await DatabaseHelper.instance.database;
-  await db.delete('stocks', where: 'id = ?', whereArgs: [id]);
-}
-
-Future<void> updateStock(String id, Map<String, dynamic> values) async {
-  final db = await DatabaseHelper.instance.database;
-  await db.update('stocks', values, where: 'id = ?', whereArgs: [id]);
-}
-
-
-
-  Future<Stock?> getStockByUserAndSymbol(String userId, String symbol) async {
-    final db = await DatabaseHelper.instance.database;
-
-    final result = await db.query(
+  /// All stock rows owned by a user (used by the Portfolio page).
+  Future<List<Map<String, dynamic>>> getAllByUser(String? userId) async {
+    final db = await _db;
+    return db.query(
       'stocks',
-      where: 'userId = ? AND symbol = ?',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'symbol ASC',
+    );
+  }
+
+  Future<Map<String, dynamic>?> getUserStock(
+      String userId, String symbol) async {
+    final db = await _db;
+    final rows = await db.query(
+      'stocks',
+      where: 'user_id = ? AND symbol = ?',
       whereArgs: [userId, symbol],
       limit: 1,
     );
-
-    if (result.isEmpty) {
-      return null;
-    }
-
-    return Stock.fromMap(result.first);
+    return rows.isEmpty ? null : rows.first;
   }
 
-Future<bool> userHasSymbol(String userId, String symbol) async {
-  final db = await DatabaseHelper.instance.database;
+  Future<void> deleteStock(String id) async {
+    final db = await _db;
+    await db.delete('stocks', where: 'id = ?', whereArgs: [id]);
+  }
 
-  final result = await db.query(
-    'stocks',
-    columns: ['id'],
-    where: 'userId = ? AND symbol = ?',
-    whereArgs: [userId, symbol],
-    limit: 1,
-  );
+  Future<void> updateStock(String id, Map<String, dynamic> values) async {
+    final db = await _db;
+    await db.update('stocks', values, where: 'id = ?', whereArgs: [id]);
+  }
 
-  return result.isNotEmpty;
-}
+  Future<Stock?> getStockByUserAndSymbol(String userId, String symbol) async {
+    final db = await _db;
+    final result = await db.query(
+      'stocks',
+      where: 'user_id = ? AND symbol = ?',
+      whereArgs: [userId, symbol],
+      limit: 1,
+    );
+    return result.isEmpty ? null : Stock.fromMap(result.first);
+  }
 
-
+  Future<bool> userHasSymbol(String userId, String symbol) async {
+    final db = await _db;
+    final result = await db.query(
+      'stocks',
+      columns: ['id'],
+      where: 'user_id = ? AND symbol = ?',
+      whereArgs: [userId, symbol],
+      limit: 1,
+    );
+    return result.isNotEmpty;
+  }
 
   Future<Map<String, dynamic>?> getBySymbol(String symbol) async {
     final db = await _db;
-
     final result = await db.query(
       'stocks',
       where: 'symbol = ?',
       whereArgs: [symbol],
     );
-
     return result.isEmpty ? null : result.first;
   }
 }
