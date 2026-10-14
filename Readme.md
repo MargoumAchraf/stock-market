@@ -83,6 +83,44 @@ If you are running the local Flask service, update the `baseUrl` to:
 static const String baseUrl = "http://localhost:5001";
 ```
 
+### What is ngrok?
+
+ngrok is a tool that creates a secure public tunnel from a local service to the internet. It is useful when you want to test a local backend, such as the Flask stock API, from a mobile app or another device without deploying to a cloud server.
+
+In this project, the Flutter app can connect to a backend that is temporarily exposed through an ngrok URL instead of `localhost`.
+
+Example:
+
+```bash
+ngrok http 5001
+```
+
+This gives you a public URL such as:
+
+```text
+https://abcd1234.ngrok-free.app
+```
+
+Then you can set the app base URL to that public URL:
+
+```dart
+static const String baseUrl = "https://abcd1234.ngrok-free.app";
+```
+
+In this project, the current example URL is:
+
+```text
+https://crusader-arming-riverboat.ngrok-free.dev
+```
+
+So the app can be configured like this:
+
+```dart
+static const String baseUrl = "https://crusader-arming-riverboat.ngrok-free.dev";
+```
+
+Use ngrok only for local testing and development. It is not a production hosting solution.
+
 ## Backend API
 
 The Flask API exposes the following endpoints:
