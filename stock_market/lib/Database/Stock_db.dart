@@ -3,7 +3,6 @@ import 'package:stock_market/Database/DatabaseHelper.dart';
 import 'package:stock_market/model/Stock.dart';
 
 class StockDB {
-  /// The `country` column actually stores the quantity of shares.
   static const String qtyColumn = 'country';
 
   Future<Database> get _db async => DatabaseHelper.instance.database;
@@ -26,7 +25,6 @@ class StockDB {
     return db.query('stocks');
   }
 
-  /// All stock rows owned by a user (used by the Portfolio page).
   Future<List<Map<String, dynamic>>> getAllByUser(String? userId) async {
     final db = await _db;
     return db.query(

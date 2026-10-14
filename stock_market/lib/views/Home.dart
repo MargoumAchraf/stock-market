@@ -31,7 +31,6 @@ class _HomePageState extends StateMVC<HomePage> {
     final email = await SessionManager.getEmail();
 
     if (!loggedIn || email == null) {
-      print("User is not logged in, redirecting to login page...");
       if (!mounted) return;
       Navigator.of(
         context,

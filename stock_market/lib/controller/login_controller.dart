@@ -61,7 +61,7 @@ class LoginController extends ControllerMVC {
       }
 
       await SessionManager.saveSession(
-        userId: user['id'] as String, // change to `as String` if id is TEXT/UUID
+        userId: user['id'] as String,
         username: user['username'] as String,
         email: user['email'] as String,
       );
@@ -71,7 +71,6 @@ class LoginController extends ControllerMVC {
       return true;
     } catch (e) {
       isLoading = false;
-      print(e);
       setState(() {});
       return false;
     }

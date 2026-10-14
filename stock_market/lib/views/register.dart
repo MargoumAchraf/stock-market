@@ -84,7 +84,6 @@ class _RegisterPageState extends StateMVC<RegisterPage> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Card containing all input fields
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,

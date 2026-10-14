@@ -51,7 +51,6 @@ class _LoginPageState extends StateMVC<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo / icon
                 Container(
                   width: 72,
                   height: 72,

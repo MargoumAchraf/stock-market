@@ -136,7 +136,6 @@ class HistoryView extends StateMVC<HistoryPage> {
     );
   }
 
-  /// Reads quantity, unit price and total from the controller.
   _TradeInfo _readTradeInfo() {
     return _TradeInfo(
       quantity: con.tradeQuantity,
@@ -145,7 +144,6 @@ class HistoryView extends StateMVC<HistoryPage> {
     );
   }
 
-  /// Confirms, executes the trade, then resets the quantity and refreshes the view.
   Future<void> _handleTrade({required bool isBuy}) async {
     final confirmed = await _confirmTrade(isBuy: isBuy);
     if (!confirmed || !mounted) return;
@@ -161,8 +159,6 @@ class HistoryView extends StateMVC<HistoryPage> {
     setState(() {});
   }
 
-  /// Shows a confirmation dialog before buying / selling.
-  /// Returns true if the user confirms.
   Future<bool> _confirmTrade({required bool isBuy}) async {
     final info = _readTradeInfo();
     final actionLabel = isBuy ? 'Acheter' : 'Vendre';

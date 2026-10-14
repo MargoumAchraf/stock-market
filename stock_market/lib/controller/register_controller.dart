@@ -90,7 +90,6 @@ class RegisterController extends ControllerMVC {
 
     try {
       final exists = await UserDB.emailExists(normalizedEmail);
-      print('Email exists: $exists');
       if (exists) {
         isLoading = false;
         emailError = 'Trrrrrrrrrrrrrrrrrhis email is already registered';
@@ -114,20 +113,15 @@ class RegisterController extends ControllerMVC {
 
       return true;
     } on DatabaseException catch (e) {
-      // Fallback safety net: catches a duplicate-email race if it
-      // somehow slips past the emailExists check above.
       isLoading = false;
       if (e.isUniqueConstraintError()) {
-        emailError = 'This email is already registered vvvvvvvvvvvv' ;
-      } else {
-        print(e);
+        emailError = 'This email is already registered' ;
       }
       setState(() {});
       return false;
     } catch (e) {
       isLoading = false;
       setState(() {});
-      print(e);
       return false;
     }
   }

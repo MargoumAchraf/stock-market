@@ -72,9 +72,7 @@ class UserDB {
 
     final String? userId = await SessionManager.getUserId();
     final String? name = await SessionManager.getUsername();
-    print('Username from session: $name'); // Debugging line
 
-    print('User ID from session: $userId'); // Debugging line
     if (userId == null) {
       return null;
     }

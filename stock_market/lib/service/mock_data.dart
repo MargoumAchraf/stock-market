@@ -14,13 +14,10 @@ Future<List<CandleData>> fetchCandlesFromApi({
   final uri = Uri.parse(
     '$baseUrl/hist/$symbol?start_date=$startDate&end_date=$endDate',
   );
-  print('Fetching candles for $symbol from $startDate to $endDate...');
 
   final response = await http.get(uri);
-  print('Fetching candles for $symbol from $uri: ${response.statusCode}');
 
   if (response.statusCode == 200) {
-    print('Successfully fetched candles for $symbol.');
   } else {
     throw Exception(
       'Failed to load candles for $symbol: ${response.statusCode} ${response.reasonPhrase}',
@@ -33,7 +30,6 @@ Future<List<CandleData>> fetchCandlesFromApi({
 }
 
 List<CandleData> parseCandlesFromJson(String jsonString) {
-  print('Parsing candle data from JSON...');
   final Map<String, dynamic> decoded = json.decode(jsonString);
   final List<dynamic> values = decoded['values'] as List<dynamic>;
 

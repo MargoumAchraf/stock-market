@@ -31,21 +31,17 @@ class HistoryController extends ControllerMVC {
   }
 
   void resetQuantity() {
-  tradeQuantity = 1; // use your real field name
+  tradeQuantity = 1; 
 }
 
   double get estimatedCost => currentPrice * tradeQuantity;
 Future<void> buy(String symbol) async {
   final double totalPrice = currentPrice * tradeQuantity;
 
-  print(
-    'Buying $tradeQuantity shares at \$${currentPrice.toStringAsFixed(2)} each. '
-    'Total: \$${totalPrice.toStringAsFixed(2)}',
-  );
+
 
   final String? userId = await SessionManager.getUserId();
   if (userId == null) {
-    print("User not logged in. Cannot proceed with the purchase.");
     SessionManager.logout();
     return;
   }
@@ -53,7 +49,6 @@ Future<void> buy(String symbol) async {
   final userDB = UserDB();
   final rawUser = await UserDB.getUser();
   if (rawUser == null) {
-    print("User not found in the database.");
     return;
   }
 
@@ -61,7 +56,6 @@ Future<void> buy(String symbol) async {
   final double currentBalance = (user['balance'] as num).toDouble();
 
   if (currentBalance < totalPrice) {
-    print("Insufficient balance. Cannot complete the purchase.");
     return;
   }
 
@@ -69,14 +63,13 @@ Future<void> buy(String symbol) async {
   final existing = await stockDB.getUserStock(userId, symbol);
 
   if (existing != null) {
-    // Add shares to the existing holding and recompute the average price
     final int oldQty = (existing['country'] as num).toInt();
     final double oldPrice = (existing['price'] as num).toDouble();
     final int newQty = oldQty + tradeQuantity;
     final double avgPrice = (oldPrice + totalPrice);
 
     await stockDB.updateStock(existing['id'] as String, {
-      'country': newQty, // quantity
+      'country': newQty,
       'price': avgPrice,
       'updatedAt': DateTime.now().toIso8601String(),
     });
@@ -87,21 +80,17 @@ Future<void> buy(String symbol) async {
       userId: userId,
       symbol: symbol,
       price: currentPricetotla,
-      country: tradeQuantity, // quantity
+      country: tradeQuantity,
       changePercent: 0.0,
       updatedAt: DateTime.now().toIso8601String(),
     );
     await stockDB.insert(stock.toMap());
   }
 
-  // Deduct balance once, for both paths
   user['balance'] = currentBalance - totalPrice;
   await userDB.update(user);
 
-  print(
-    'Purchase successful! Total: \$${totalPrice.toStringAsFixed(2)}, '
-    'New balance: \$${(user['balance'] as double).toStringAsFixed(2)}',
-  );
+
 }
 
 
@@ -114,7 +103,6 @@ Future<void> sell(String symbol) async {
 
   final String? userId = await SessionManager.getUserId();
   if (userId == null) {
-    print("User not logged in. Cannot proceed with the sale.");
     SessionManager.logout();
     return;
   }
@@ -122,7 +110,6 @@ Future<void> sell(String symbol) async {
   final userDB = UserDB();
   final rawUser = await UserDB.getUser();
   if (rawUser == null) {
-    print("User not found in the database.");
     return;
   }
 
@@ -133,14 +120,12 @@ Future<void> sell(String symbol) async {
   final existing = await stockDB.getUserStock(userId, symbol);
 
   if (existing == null) {
-    print("You don't own any shares of $symbol.");
     return;
   }
 
-  final int ownedQty = (existing['country'] as num).toInt(); // quantity
+  final int ownedQty = (existing['country'] as num).toInt(); 
 
   if (tradeQuantity > ownedQty) {
-    print("Not enough shares. You own $ownedQty, tried to sell $tradeQuantity.");
     return;
   }
 
@@ -150,7 +135,7 @@ Future<void> sell(String symbol) async {
     await stockDB.deleteStock(existing['id'] as String);
   } else {
     await stockDB.updateStock(existing['id'] as String, {
-      'country': remaining, // quantity
+      'country': remaining,
       'updatedAt': DateTime.now().toIso8601String(),
     });
   }
@@ -158,10 +143,7 @@ Future<void> sell(String symbol) async {
   user['balance'] = currentBalance + totalPrice;
   await userDB.update(user);
 
-  print(
-    'Sale successful! Total: \$${totalPrice.toStringAsFixed(2)}, '
-    'New balance: \$${(user['balance'] as double).toStringAsFixed(2)}',
-  );
+
 }
 
 
@@ -220,5 +202,5 @@ Future<void> sell(String symbol) async {
   }
 
   double get currentPrice =>
-      displayData.isNotEmpty ? displayData.last.close ?? 0 : 0;
+      displayData.isNotEmpty ? displayData.first.close ?? 0 : 0;
 }

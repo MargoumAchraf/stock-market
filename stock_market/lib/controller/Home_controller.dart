@@ -11,11 +11,9 @@ class HomeController extends ControllerMVC {
   HomeController._();
   static HomeController? _this;
 
-  static const String baseUrl = "https://crusader-arming-riverboat.ngrok-free.dev/";
+  static const String baseUrl = "https://crusader-arming-riverboat.ngrok-free.dev";
 
-  static const Duration refreshInterval = Duration(
-    milliseconds: 5000,
-  ); // 5x/sec
+
 
   List<Map<String, dynamic>> stocks = [];
   Map<String, dynamic>? user;
@@ -30,13 +28,11 @@ class HomeController extends ControllerMVC {
     super.dispose();
   }
 
-  /// Initial load: get the list of symbols, then fetch each one's current price.
   Future<void> fetchStocks() async {
     if (!await SessionManager.isLoggedIn()) {
-      print("User not logged in, skipping fetchStocks.");
       isLoading = false;
       setState(() {});
-      SessionManager.logout(); // Ensure user is logged out if not logged in
+      SessionManager.logout(); 
      
       return;
     }
@@ -45,7 +41,6 @@ class HomeController extends ControllerMVC {
     errorMessage = null;
     setState(() {});
 
-    print("Fetching stocks from $baseUrl/stocks_list");
     try {
       final listRes = await http.get(Uri.parse("$baseUrl/stocks_list"));
 
@@ -58,13 +53,11 @@ class HomeController extends ControllerMVC {
 
       final List<Map<String, dynamic>> results = [];
 
-      // Fetch each symbol's current price concurrently
       final futures = symbols.map((symbol) async {
         try {
           final rateRes = await http.get(
             Uri.parse("$baseUrl/exchange_rate/$symbol"),
           );
-print('Fetching price for $symbol: ${rateRes.statusCode}');
           if (rateRes.statusCode != 200) return null;
 
           final rateData = jsonDecode(rateRes.body);
@@ -83,8 +76,7 @@ print('Fetching price for $symbol: ${rateRes.statusCode}');
       isLoading = false;
       setState(() {});
 
-      // Start real-time polling once the initial list is loaded
-      _startRealTimeUpdates();
+      _refreshPrices();
     } catch (e) {
       errorMessage = e.toString();
       isLoading = false;
@@ -92,13 +84,8 @@ print('Fetching price for $symbol: ${rateRes.statusCode}');
     }
   }
 
-  void _startRealTimeUpdates() {
-    _timer?.cancel();
-    _timer = Timer.periodic(refreshInterval, (_) => _refreshPrices());
-  }
+  
 
-  /// Lightweight refresh: hits /exchange_rate/<symbol> for every monitored
-  /// stock in parallel and updates its price.
   Future<void> _refreshPrices() async {
     if (stocks.isEmpty) return;
 
@@ -127,19 +114,15 @@ print('Fetching price for $symbol: ${rateRes.statusCode}');
 
   Future<User?> getUser() async {
     if (!await SessionManager.isLoggedIn()) {
-      print("User not logged in, skipping getUser.");
       return null;
     }
 
     user = await UserDB.getUser();
-    print("User fetched from database: $user");
     if (user == null) {
-      print("No user found in session, skipping getUser.");
       await SessionManager.logout();
       
       return null;
     }
-    print("Fetched user: ${user!['username']} (${user!['email']})");
     return user != null ? User.fromJson(user!) : null;
   }
 }

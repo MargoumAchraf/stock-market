@@ -19,7 +19,7 @@ class FooterBar extends StatelessWidget {
     final currentRoute = ModalRoute.of(context)?.settings.name;
     final targetRoute = _routes[index];
 
-    if (currentRoute == targetRoute) return; // ma dirich navigate l nafs page
+    if (currentRoute == targetRoute) return; 
 
     navigatorKey.currentState?.pushReplacementNamed(targetRoute);
   }
