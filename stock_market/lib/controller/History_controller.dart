@@ -1,3 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:mvc_pattern/mvc_pattern.dart';
 import 'package:interactive_chart/interactive_chart.dart';
 import 'package:stock_market/Database/Stock_db.dart';
@@ -12,6 +17,12 @@ class HistoryController extends ControllerMVC {
   static HistoryController? _this;
   HistoryController._() : super();
 
+  // TODO: set your real backend base URL
+  // Android emulator -> http://10.0.2.2:PORT
+  // Real phone       -> http://<PC_IP>:PORT
+  static const String baseUrl = 'https://crusader-arming-riverboat.ngrok-free.dev';
+  static const Duration pollInterval = Duration(milliseconds: 200); // 5 / second
+
   List<CandleData> dailyData = [];
   List<CandleData> displayData = [];
   Timeframe timeframe = Timeframe.day;
@@ -20,6 +31,75 @@ class HistoryController extends ControllerMVC {
   String? error;
 
   int tradeQuantity = 1;
+
+  // Live price polling
+  Timer? _pollTimer;
+  bool _fetching = false;
+  double? livePrice;
+  bool? priceUp; // true = went up, false = went down, null = no change yet
+  String? liveError; // last fetch error (null = OK)
+
+  void startPolling(String symbol) {
+    stopPolling();
+    _fetchLivePrice(symbol); // first fetch immediately
+    _pollTimer = Timer.periodic(pollInterval, (_) => _fetchLivePrice(symbol));
+  }
+
+  void stopPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    _fetching = false;
+  }
+
+  void _setError(String message) {
+    if (liveError == message) return;
+    liveError = message;
+    debugPrint('Live price error: $message');
+    setState(() {});
+  }
+
+  Future<void> _fetchLivePrice(String symbol) async {
+    if (_fetching) return; // skip tick if previous request is still running
+    _fetching = true;
+    try {
+      final res = await http
+          .get(Uri.parse('$baseUrl/exchange_rate/$symbol'))
+          .timeout(const Duration(seconds: 2));
+
+      // Polling was stopped while the request was running
+      if (_pollTimer == null) return;
+
+      if (res.statusCode == 200) {
+        final body = jsonDecode(res.body);
+        // Adjust the key to match your backend response
+        final num? rate =
+            body is num ? body : (body['rate'] ?? body['price']) as num?;
+        if (rate != null) {
+          final double newPrice = rate.toDouble();
+          if (livePrice != null && newPrice != livePrice) {
+            priceUp = newPrice > livePrice!;
+          }
+          livePrice = newPrice;
+          liveError = null;
+          setState(() {});
+        } else {
+          _setError('Bad response: ${res.body}');
+        }
+      } else {
+        _setError('HTTP ${res.statusCode}');
+      }
+    } catch (e) {
+      if (_pollTimer != null) _setError(e.toString());
+    } finally {
+      _fetching = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    stopPolling();
+    super.dispose();
+  }
 
   void incrementQuantity() {
     setState(() => tradeQuantity++);
@@ -31,123 +111,115 @@ class HistoryController extends ControllerMVC {
   }
 
   void resetQuantity() {
-  tradeQuantity = 1; 
-}
+    tradeQuantity = 1;
+  }
 
   double get estimatedCost => currentPrice * tradeQuantity;
-Future<void> buy(String symbol) async {
-  final double totalPrice = currentPrice * tradeQuantity;
 
+  Future<void> buy(String symbol) async {
+    final double totalPrice = currentPrice * tradeQuantity;
 
+    final String? userId = await SessionManager.getUserId();
+    if (userId == null) {
+      SessionManager.logout();
+      return;
+    }
 
-  final String? userId = await SessionManager.getUserId();
-  if (userId == null) {
-    SessionManager.logout();
-    return;
+    final userDB = UserDB();
+    final rawUser = await UserDB.getUser();
+    if (rawUser == null) {
+      return;
+    }
+
+    final user = Map<String, dynamic>.from(rawUser);
+    final double currentBalance = (user['balance'] as num).toDouble();
+
+    if (currentBalance < totalPrice) {
+      return;
+    }
+
+    final stockDB = StockDB();
+    final existing = await stockDB.getUserStock(userId, symbol);
+
+    if (existing != null) {
+      final int oldQty = (existing['country'] as num).toInt();
+      final double oldPrice = (existing['price'] as num).toDouble();
+      final int newQty = oldQty + tradeQuantity;
+      final double avgPrice = (oldPrice + totalPrice);
+
+      await stockDB.updateStock(existing['id'] as String, {
+        'country': newQty,
+        'price': avgPrice,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+    } else {
+      final double currentPricetotla = currentPrice * tradeQuantity;
+      final Stock stock = Stock(
+        id: Uuid().generateV4(),
+        userId: userId,
+        symbol: symbol,
+        price: currentPricetotla,
+        country: tradeQuantity,
+        changePercent: 0.0,
+        updatedAt: DateTime.now().toIso8601String(),
+      );
+      await stockDB.insert(stock.toMap());
+    }
+
+    user['balance'] = currentBalance - totalPrice;
+    await userDB.update(user);
   }
 
-  final userDB = UserDB();
-  final rawUser = await UserDB.getUser();
-  if (rawUser == null) {
-    return;
+  Future<void> sell(String symbol) async {
+    final double totalPrice = currentPrice * tradeQuantity;
+
+    final String? userId = await SessionManager.getUserId();
+    if (userId == null) {
+      SessionManager.logout();
+      return;
+    }
+
+    final userDB = UserDB();
+    final rawUser = await UserDB.getUser();
+    if (rawUser == null) {
+      return;
+    }
+
+    final user = Map<String, dynamic>.from(rawUser);
+    final double currentBalance = (user['balance'] as num).toDouble();
+
+    final stockDB = StockDB();
+    final existing = await stockDB.getUserStock(userId, symbol);
+
+    if (existing == null) {
+      return;
+    }
+
+    final int ownedQty = (existing['country'] as num).toInt();
+
+    if (tradeQuantity > ownedQty) {
+      return;
+    }
+
+    final int remaining = ownedQty - tradeQuantity;
+
+    if (remaining == 0) {
+      await stockDB.deleteStock(existing['id'] as String);
+    } else {
+      await stockDB.updateStock(existing['id'] as String, {
+        'country': remaining,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+    }
+
+    user['balance'] = currentBalance + totalPrice;
+    await userDB.update(user);
   }
-
-  final user = Map<String, dynamic>.from(rawUser);
-  final double currentBalance = (user['balance'] as num).toDouble();
-
-  if (currentBalance < totalPrice) {
-    return;
-  }
-
-  final stockDB = StockDB();
-  final existing = await stockDB.getUserStock(userId, symbol);
-
-  if (existing != null) {
-    final int oldQty = (existing['country'] as num).toInt();
-    final double oldPrice = (existing['price'] as num).toDouble();
-    final int newQty = oldQty + tradeQuantity;
-    final double avgPrice = (oldPrice + totalPrice);
-
-    await stockDB.updateStock(existing['id'] as String, {
-      'country': newQty,
-      'price': avgPrice,
-      'updatedAt': DateTime.now().toIso8601String(),
-    });
-  } else {
-    final double currentPricetotla = currentPrice * tradeQuantity;
-    final Stock stock = Stock(
-      id: Uuid().generateV4(),
-      userId: userId,
-      symbol: symbol,
-      price: currentPricetotla,
-      country: tradeQuantity,
-      changePercent: 0.0,
-      updatedAt: DateTime.now().toIso8601String(),
-    );
-    await stockDB.insert(stock.toMap());
-  }
-
-  user['balance'] = currentBalance - totalPrice;
-  await userDB.update(user);
-
-
-}
-
-
-
-
-
-
-Future<void> sell(String symbol) async {
-  final double totalPrice = currentPrice * tradeQuantity;
-
-  final String? userId = await SessionManager.getUserId();
-  if (userId == null) {
-    SessionManager.logout();
-    return;
-  }
-
-  final userDB = UserDB();
-  final rawUser = await UserDB.getUser();
-  if (rawUser == null) {
-    return;
-  }
-
-  final user = Map<String, dynamic>.from(rawUser);
-  final double currentBalance = (user['balance'] as num).toDouble();
-
-  final stockDB = StockDB();
-  final existing = await stockDB.getUserStock(userId, symbol);
-
-  if (existing == null) {
-    return;
-  }
-
-  final int ownedQty = (existing['country'] as num).toInt(); 
-
-  if (tradeQuantity > ownedQty) {
-    return;
-  }
-
-  final int remaining = ownedQty - tradeQuantity;
-
-  if (remaining == 0) {
-    await stockDB.deleteStock(existing['id'] as String);
-  } else {
-    await stockDB.updateStock(existing['id'] as String, {
-      'country': remaining,
-      'updatedAt': DateTime.now().toIso8601String(),
-    });
-  }
-
-  user['balance'] = currentBalance + totalPrice;
-  await userDB.update(user);
-
-
-}
-
 
   Future<void> loadData(String symbol) async {
+    // Start the live rate first, so it works even if the candles fail
+    startPolling(symbol);
+
     setState(() {
       loading = true;
       error = null;
@@ -202,5 +274,5 @@ Future<void> sell(String symbol) async {
   }
 
   double get currentPrice =>
-      displayData.isNotEmpty ? displayData.first.close ?? 0 : 0;
+      livePrice ?? (displayData.isNotEmpty ? displayData.first.close ?? 0 : 0);
 }

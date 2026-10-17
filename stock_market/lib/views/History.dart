@@ -1,3 +1,5 @@
+import 'dart:ui' show FontFeature;
+
 import 'package:flutter/material.dart';
 import 'package:mvc_pattern/mvc_pattern.dart';
 import 'package:interactive_chart/interactive_chart.dart';
@@ -26,10 +28,29 @@ class HistoryView extends StateMVC<HistoryPage> {
   HistoryView() : super(HistoryController());
   HistoryController get con => controller as HistoryController;
 
+  // Cache the reversed list so the chart is not rebuilt with a new list
+  // on every price update.
+  List<CandleData>? _sourceData;
+  List<CandleData> _chartCandles = [];
+
   @override
   void initState() {
     super.initState();
-    con.loadData(widget.symbol);
+    con.loadData(widget.symbol); // also starts live polling
+  }
+
+  @override
+  void dispose() {
+    con.stopPolling(); // controller is a singleton, so stop it here
+    super.dispose();
+  }
+
+  List<CandleData> _candlesForChart() {
+    if (!identical(_sourceData, con.displayData)) {
+      _sourceData = con.displayData;
+      _chartCandles = con.displayData.reversed.toList();
+    }
+    return _chartCandles;
   }
 
   @override
@@ -38,7 +59,7 @@ class HistoryView extends StateMVC<HistoryPage> {
       data: ThemeData(scaffoldBackgroundColor: const Color(0xFF121212)),
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.symbol),
+          title: _buildAppBarTitle(),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: () => Navigator.of(context).pop(),
@@ -57,6 +78,71 @@ class HistoryView extends StateMVC<HistoryPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAppBarTitle() {
+    final price = con.livePrice;
+    final up = con.priceUp;
+    final Color priceColor = up == null
+        ? Colors.black87
+        : (up ? const Color(0xFF26A69A) : const Color(0xFFEF5350));
+
+    Widget rateWidget;
+    if (price != null) {
+      rateWidget = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 24,
+            child: up == null
+                ? null
+                : Icon(
+                    up ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                    color: priceColor,
+                    size: 28,
+                  ),
+          ),
+          SizedBox(
+            width: 90, // fixed width so the title never jumps
+            child: Text(
+              '\$${price.toStringAsFixed(2)}',
+              style: TextStyle(
+                color: priceColor,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      );
+    } else if (con.liveError != null) {
+      rateWidget = Expanded(
+        child: Text(
+          'rate: ${con.liveError}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: Color(0xFFEF5350),
+            fontSize: 11,
+          ),
+        ),
+      );
+    } else {
+      rateWidget = const SizedBox(
+        width: 16,
+        height: 16,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    return Row(
+      children: [
+        Text(widget.symbol),
+        const SizedBox(width: 12),
+        rateWidget,
+      ],
     );
   }
 
@@ -104,7 +190,7 @@ class HistoryView extends StateMVC<HistoryPage> {
 
     return InteractiveChart(
       key: ValueKey(con.timeframe),
-      candles: con.displayData.reversed.toList(),
+      candles: _candlesForChart(),
       style: ChartStyle(
         priceLossColor: const Color(0xFFEF5350),
         priceGainColor: const Color(0xFF26A69A),
@@ -145,17 +231,25 @@ class HistoryView extends StateMVC<HistoryPage> {
   }
 
   Future<void> _handleTrade({required bool isBuy}) async {
-    final confirmed = await _confirmTrade(isBuy: isBuy);
-    if (!confirmed || !mounted) return;
+    // Freeze the price while the dialog is open, so the dialog and
+    // buy()/sell() use exactly the same price.
+    con.stopPolling();
 
-    if (isBuy) {
-      await con.buy(widget.symbol);
-    } else {
-      await con.sell(widget.symbol);
-    }
+    final confirmed = await _confirmTrade(isBuy: isBuy);
 
     if (!mounted) return;
-    con.resetQuantity();
+
+    if (confirmed) {
+      if (isBuy) {
+        await con.buy(widget.symbol);
+      } else {
+        await con.sell(widget.symbol);
+      }
+      if (!mounted) return;
+      con.resetQuantity();
+    }
+
+    con.startPolling(widget.symbol);
     setState(() {});
   }
 
@@ -259,6 +353,21 @@ class HistoryView extends StateMVC<HistoryPage> {
                 'Prix actuel',
                 '\$${con.currentPrice.toStringAsFixed(2)}',
               ),
+              if (con.livePrice != null)
+                Row(
+                  children: const [
+                    Icon(Icons.circle, size: 8, color: Color(0xFF26A69A)),
+                    SizedBox(width: 6),
+                    Text(
+                      'LIVE',
+                      style: TextStyle(
+                        color: Color(0xFF26A69A),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 16),
