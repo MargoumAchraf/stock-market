@@ -11,8 +11,7 @@ class HomeController extends ControllerMVC {
   HomeController._();
   static HomeController? _this;
 
-  static const String baseUrl = "https://crusader-arming-riverboat.ngrok-free.dev";
-
+  static const String baseUrl = "http://10.0.2.2:5001";
 
 
   List<Map<String, dynamic>> stocks = [];
@@ -51,32 +50,14 @@ class HomeController extends ControllerMVC {
       final List<dynamic> allSymbols = jsonDecode(listRes.body);
       final symbols = allSymbols.cast<String>().take(20).toList();
 
-      final List<Map<String, dynamic>> results = [];
 
-      final futures = symbols.map((symbol) async {
-        try {
-          final rateRes = await http.get(
-            Uri.parse("$baseUrl/exchange_rate/$symbol"),
-          );
-          if (rateRes.statusCode != 200) return null;
+       
 
-          final rateData = jsonDecode(rateRes.body);
-          final double price = (rateData['rate'] as num).toDouble();
 
-          return {'symbol': symbol, 'name': symbol, 'price': price};
-        } catch (_) {
-          return null;
-        }
-      });
-
-      final fetched = await Future.wait(futures);
-      results.addAll(fetched.whereType<Map<String, dynamic>>());
-
-      stocks = results;
+      stocks = symbols.map((symbol) => {'symbol': symbol}).toList();
       isLoading = false;
       setState(() {});
 
-      _refreshPrices();
     } catch (e) {
       errorMessage = e.toString();
       isLoading = false;
@@ -86,31 +67,7 @@ class HomeController extends ControllerMVC {
 
   
 
-  Future<void> _refreshPrices() async {
-    if (stocks.isEmpty) return;
 
-    final futures = stocks.map((stock) async {
-      final symbol = stock['symbol'] as String;
-      try {
-        final rateRes = await http.get(
-          Uri.parse("$baseUrl/exchange_rate/$symbol"),
-        );
-        if (rateRes.statusCode != 200) return stock;
-
-        final rateData = jsonDecode(rateRes.body);
-        final double price = (rateData['rate'] as num).toDouble();
-
-        return {...stock, 'price': price};
-      } catch (_) {
-        return stock;
-      }
-    });
-
-    final updated = await Future.wait(futures);
-
-    stocks = updated.cast<Map<String, dynamic>>();
-    setState(() {});
-  }
 
   Future<User?> getUser() async {
     if (!await SessionManager.isLoggedIn()) {

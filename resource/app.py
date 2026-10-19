@@ -52,7 +52,7 @@ def get_hist_data(symbol):
         return response
 
     try:
-        filtered = get_historical_data(df, start_date, end_date, start_time)
+        filtered = get_historical_data(df, start_date, end_date, datetime.now())
         data = filtered[["datetime", "Close"]].to_dict(orient="list")
 
         values = [

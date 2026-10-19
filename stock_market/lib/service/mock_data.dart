@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 Future<List<CandleData>> fetchCandlesFromApi({
   required String symbol,
-  String baseUrl = 'https://crusader-arming-riverboat.ngrok-free.dev',
+  String baseUrl = 'http://10.0.2.2:5001', 
 }) async {
   DateTime now = DateTime.now();
   DateTime lastYear = DateTime(now.year - 1, now.month, now.day);

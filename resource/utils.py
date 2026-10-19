@@ -17,8 +17,10 @@ def load_data(directory_path="./sample-stocks/"):
     return historical_data
 
 
-def get_historical_data(df, start, end, start_time):
-    today = datetime.fromtimestamp(start_time).date()
+def get_historical_data(df, start, end, now=None):
+    # "now" = wa9t dyal db3a, machi wa9t tlou3 dyal server
+    now = now or datetime.now()
+    today = now.date()
     last_entry = df.sort_values(by="Date").iloc[-1]
     delta_today_last_entry = today - last_entry.Date.date()
 
@@ -27,9 +29,8 @@ def get_historical_data(df, start, end, start_time):
     if query_end_dt < query_start_dt:
         raise ValueError("end_date must come after start_date")
     if query_end_dt.date() > today:
-        query_end_dt = datetime.fromtimestamp(start_time)
+        query_end_dt = now
 
-    # copy: ma-nbeddlouch l-DataFrame l-mochtarak
     shifted = df.Date + delta_today_last_entry
     mask = (shifted >= query_start_dt) & (shifted <= query_end_dt)
     result = df.loc[mask].copy()

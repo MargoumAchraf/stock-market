@@ -28,8 +28,6 @@ class HistoryView extends StateMVC<HistoryPage> {
   HistoryView() : super(HistoryController());
   HistoryController get con => controller as HistoryController;
 
-  // Cache the reversed list so the chart is not rebuilt with a new list
-  // on every price update.
   List<CandleData>? _sourceData;
   List<CandleData> _chartCandles = [];
 

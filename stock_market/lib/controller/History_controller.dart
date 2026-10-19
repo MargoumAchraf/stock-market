@@ -17,12 +17,9 @@ class HistoryController extends ControllerMVC {
   static HistoryController? _this;
   HistoryController._() : super();
 
-  // TODO: set your real backend base URL
-  // Android emulator -> http://10.0.2.2:PORT
-  // Real phone       -> http://<PC_IP>:PORT
-  static const String baseUrl = 'https://crusader-arming-riverboat.ngrok-free.dev';
-  static const Duration pollInterval = Duration(milliseconds: 200); // 5 / second
 
+  static const String baseUrl = 'http://10.0.2.2:5001';
+  static const Duration pollInterval = Duration(milliseconds: 200);
   List<CandleData> dailyData = [];
   List<CandleData> displayData = [];
   Timeframe timeframe = Timeframe.day;
@@ -32,16 +29,16 @@ class HistoryController extends ControllerMVC {
 
   int tradeQuantity = 1;
 
-  // Live price polling
+ 
   Timer? _pollTimer;
   bool _fetching = false;
   double? livePrice;
-  bool? priceUp; // true = went up, false = went down, null = no change yet
-  String? liveError; // last fetch error (null = OK)
+  bool? priceUp; 
+  String? liveError; 
 
   void startPolling(String symbol) {
     stopPolling();
-    _fetchLivePrice(symbol); // first fetch immediately
+    _fetchLivePrice(symbol); 
     _pollTimer = Timer.periodic(pollInterval, (_) => _fetchLivePrice(symbol));
   }
 
@@ -59,19 +56,17 @@ class HistoryController extends ControllerMVC {
   }
 
   Future<void> _fetchLivePrice(String symbol) async {
-    if (_fetching) return; // skip tick if previous request is still running
+    if (_fetching) return; 
     _fetching = true;
     try {
       final res = await http
           .get(Uri.parse('$baseUrl/exchange_rate/$symbol'))
           .timeout(const Duration(seconds: 2));
 
-      // Polling was stopped while the request was running
       if (_pollTimer == null) return;
 
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
-        // Adjust the key to match your backend response
         final num? rate =
             body is num ? body : (body['rate'] ?? body['price']) as num?;
         if (rate != null) {
@@ -217,7 +212,6 @@ class HistoryController extends ControllerMVC {
   }
 
   Future<void> loadData(String symbol) async {
-    // Start the live rate first, so it works even if the candles fail
     startPolling(symbol);
 
     setState(() {
@@ -226,7 +220,6 @@ class HistoryController extends ControllerMVC {
     });
     try {
       final candles = await fetchCandlesFromApi(symbol: symbol);
-      candles.sort((a, b) => a.timestamp.compareTo(b.timestamp));
       setState(() {
         dailyData = candles;
         loading = false;
@@ -273,6 +266,5 @@ class HistoryController extends ControllerMVC {
     }
   }
 
-  double get currentPrice =>
-      livePrice ?? (displayData.isNotEmpty ? displayData.first.close ?? 0 : 0);
+  double get currentPrice => displayData.last.close ?? 0;
 }

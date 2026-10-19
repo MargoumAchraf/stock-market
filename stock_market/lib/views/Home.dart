@@ -43,8 +43,6 @@ class _HomePageState extends StateMVC<HomePage> {
     }
 
     await con.fetchStocks();
-
-    // Handle the case where fetchStocks fails
   }
 
   @override
@@ -105,7 +103,7 @@ class _HomePageState extends StateMVC<HomePage> {
                   offset: const Offset(0, 45),
                   onSelected: (value) async {
                     if (value == 'logout') {
-                      await SessionManager.logout(); // clear session/token
+                      await SessionManager.logout();
                       if (context.mounted) {
                         Navigator.of(
                           context,
@@ -177,8 +175,8 @@ class _HomePageState extends StateMVC<HomePage> {
             ),
             const SizedBox(height: 8),
             Text(
-              '\$ ${(con.user?['balance'] as double? ?? 0.0).toStringAsFixed(2)}',
-              style: TextStyle(
+              '\$ ${(con.user?['balance'] as num? ?? 0).toDouble().toStringAsFixed(2)}',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
@@ -210,7 +208,6 @@ class _HomePageState extends StateMVC<HomePage> {
             TextButton(
               onPressed: () async {
                 await con.fetchStocks();
-                 
               },
               child: Text(
                 'Refresh',
@@ -229,13 +226,13 @@ class _HomePageState extends StateMVC<HomePage> {
     }
 
     if (con.errorMessage != null) {
-      return Center(
+      return const Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Text(
             "Couldn't load markets. Make sure the API is reachable.",
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey),
+            style: TextStyle(color: Colors.grey),
           ),
         ),
       );
@@ -246,7 +243,7 @@ class _HomePageState extends StateMVC<HomePage> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: stocks.length,
       itemBuilder: (context, index) {
-        final stock = stocks[index];
+        final String symbol = stocks[index]['symbol'] as String;
         return FadeInUp(
           duration: Duration(milliseconds: 1000 + (index * 100)),
           child: Container(
@@ -271,14 +268,14 @@ class _HomePageState extends StateMVC<HomePage> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => HistoryPage(symbol: stock['symbol']),
+                      builder: (_) => HistoryPage(symbol: symbol),
                     ),
                   );
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 12,
+                    vertical: 16,
                   ),
                   child: Row(
                     children: [
@@ -286,7 +283,7 @@ class _HomePageState extends StateMVC<HomePage> {
                         radius: 22,
                         backgroundColor: Colors.orange.shade50,
                         child: Text(
-                          stock['symbol'][0],
+                          symbol[0],
                           style: TextStyle(
                             color: Colors.orange.shade800,
                             fontWeight: FontWeight.bold,
@@ -296,35 +293,15 @@ class _HomePageState extends StateMVC<HomePage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              stock['symbol'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              stock['name'],
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                        child: Text(
+                          symbol,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
-                      Text(
-                        '\$${(stock['price'] as double).toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
+                      Icon(Icons.chevron_right, color: Colors.grey.shade400),
                     ],
                   ),
                 ),
