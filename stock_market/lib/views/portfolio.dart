@@ -39,8 +39,7 @@ class _PortfolioViewState extends StateMVC<portfolioPage> {
     await con.init(userId);
   }
 
-  double get _totalInvested =>
-      con.holdings.fold(0.0, (sum, h) => sum + h.price * h.quantity);
+  double get _totalInvested => con.holdings.fold(0.0, (sum, h) => sum + (h.price));
 
   int get _totalShares => con.holdings.fold(0, (sum, h) => sum + h.quantity);
 
@@ -192,7 +191,6 @@ class _PortfolioViewState extends StateMVC<portfolioPage> {
   }
 
   Widget _holdingCard(Holding h) {
-    final total = h.price * h.quantity;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -243,7 +241,7 @@ class _PortfolioViewState extends StateMVC<portfolioPage> {
             ),
           ),
           Text(
-            '\$${total.toStringAsFixed(2)}',
+            '\$${h.price.toStringAsFixed(2)}',
             style: const TextStyle(
               color: _text,
               fontSize: 16,

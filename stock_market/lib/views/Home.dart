@@ -26,6 +26,13 @@ class _HomePageState extends StateMVC<HomePage> {
     _checkSessionAndLoad();
   }
 
+
+
+@override
+  void dispose() {
+    con.dispose();
+    super.dispose();
+  }
   Future<void> _checkSessionAndLoad() async {
     final loggedIn = await SessionManager.isLoggedIn();
     final email = await SessionManager.getEmail();
@@ -103,6 +110,7 @@ class _HomePageState extends StateMVC<HomePage> {
                   offset: const Offset(0, 45),
                   onSelected: (value) async {
                     if (value == 'logout') {
+                       con.reset();   
                       await SessionManager.logout();
                       if (context.mounted) {
                         Navigator.of(

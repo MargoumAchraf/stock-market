@@ -13,7 +13,6 @@ class HomeController extends ControllerMVC {
 
   static const String baseUrl = "http://10.0.2.2:5001";
 
-
   List<Map<String, dynamic>> stocks = [];
   Map<String, dynamic>? user;
   bool isLoading = false;
@@ -27,12 +26,21 @@ class HomeController extends ControllerMVC {
     super.dispose();
   }
 
+  void reset() {
+    _timer?.cancel();
+    _timer = null;
+    user = null;
+    stocks = [];
+    isLoading = false;
+    errorMessage = null;
+  }
+
   Future<void> fetchStocks() async {
     if (!await SessionManager.isLoggedIn()) {
       isLoading = false;
       setState(() {});
-      SessionManager.logout(); 
-     
+      SessionManager.logout();
+
       return;
     }
 
@@ -50,24 +58,15 @@ class HomeController extends ControllerMVC {
       final List<dynamic> allSymbols = jsonDecode(listRes.body);
       final symbols = allSymbols.cast<String>().take(20).toList();
 
-
-       
-
-
       stocks = symbols.map((symbol) => {'symbol': symbol}).toList();
       isLoading = false;
       setState(() {});
-
     } catch (e) {
       errorMessage = e.toString();
       isLoading = false;
       setState(() {});
     }
   }
-
-  
-
-
 
   Future<User?> getUser() async {
     if (!await SessionManager.isLoggedIn()) {
@@ -77,7 +76,7 @@ class HomeController extends ControllerMVC {
     user = await UserDB.getUser();
     if (user == null) {
       await SessionManager.logout();
-      
+
       return null;
     }
     return user != null ? User.fromJson(user!) : null;
