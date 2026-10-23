@@ -26,13 +26,12 @@ class _HomePageState extends StateMVC<HomePage> {
     _checkSessionAndLoad();
   }
 
-
-
-@override
+  @override
   void dispose() {
     con.dispose();
     super.dispose();
   }
+
   Future<void> _checkSessionAndLoad() async {
     final loggedIn = await SessionManager.isLoggedIn();
     final email = await SessionManager.getEmail();
@@ -45,11 +44,9 @@ class _HomePageState extends StateMVC<HomePage> {
       return;
     }
 
-    if (con.user == null) {
-      await con.getUser();
-    }
-
+    await con.getUser();
     await con.fetchStocks();
+    if (mounted) setState(() {});
   }
 
   @override
@@ -110,7 +107,7 @@ class _HomePageState extends StateMVC<HomePage> {
                   offset: const Offset(0, 45),
                   onSelected: (value) async {
                     if (value == 'logout') {
-                       con.reset();   
+                      con.reset();
                       await SessionManager.logout();
                       if (context.mounted) {
                         Navigator.of(
@@ -214,9 +211,7 @@ class _HomePageState extends StateMVC<HomePage> {
               ),
             ),
             TextButton(
-              onPressed: () async {
-                await con.fetchStocks();
-              },
+              onPressed: _checkSessionAndLoad,
               child: Text(
                 'Refresh',
                 style: TextStyle(color: Colors.orange.shade800),
@@ -272,13 +267,14 @@ class _HomePageState extends StateMVC<HomePage> {
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),
-                onTap: () {
-                  Navigator.push(
+                onTap: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => HistoryPage(symbol: symbol),
                     ),
                   );
+                  if (mounted) _checkSessionAndLoad();
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
