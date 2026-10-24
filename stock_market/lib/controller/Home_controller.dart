@@ -23,6 +23,9 @@ class HomeController extends ControllerMVC {
   @override
   void dispose() {
     _timer?.cancel();
+    stocks.clear();
+    user = null;
+    errorMessage = null;
     super.dispose();
   }
 

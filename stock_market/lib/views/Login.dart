@@ -6,8 +6,8 @@ import 'package:stock_market/views/register.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
-  @override
-  State createState() => _LoginPageState(); // raw `State`, no generic
+  @override//
+  State createState() => _LoginPageState();  
 }
 
 class _LoginPageState extends StateMVC<LoginPage> {

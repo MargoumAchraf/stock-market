@@ -34,12 +34,13 @@ class HistoryView extends StateMVC<HistoryPage> {
   @override
   void initState() {
     super.initState();
-    con.loadData(widget.symbol); // also starts live polling
+    con.reset();  
+    con.loadData(widget.symbol); 
   }
 
   @override
   void dispose() {
-    con.stopPolling(); // controller is a singleton, so stop it here
+    con.reset(); 
     super.dispose();
   }
 
@@ -102,7 +103,7 @@ class HistoryView extends StateMVC<HistoryPage> {
                   ),
           ),
           SizedBox(
-            width: 90, // fixed width so the title never jumps
+            width: 90,
             child: Text(
               '\$${price.toStringAsFixed(2)}',
               style: TextStyle(
@@ -229,8 +230,7 @@ class HistoryView extends StateMVC<HistoryPage> {
   }
 
   Future<void> _handleTrade({required bool isBuy}) async {
-    // Freeze the price while the dialog is open, so the dialog and
-    // buy()/sell() use exactly the same price.
+ 
     con.stopPolling();
 
     final confirmed = await _confirmTrade(isBuy: isBuy);
@@ -238,17 +238,61 @@ class HistoryView extends StateMVC<HistoryPage> {
     if (!mounted) return;
 
     if (confirmed) {
-      if (isBuy) {
-        await con.buy(widget.symbol);
-      } else {
-        await con.sell(widget.symbol);
-      }
+      final TradeResult result = isBuy
+          ? await con.buy(widget.symbol)
+          : await con.sell(widget.symbol);
       if (!mounted) return;
-      con.resetQuantity();
+
+      if (result.success) con.resetQuantity();
+
+      await _showResultDialog(result, isBuy: isBuy);
+      if (!mounted) return;
     }
 
     con.startPolling(widget.symbol);
     setState(() {});
+  }
+
+  Future<void> _showResultDialog(
+    TradeResult result, {
+    required bool isBuy,
+  }) async {
+    final Color color =
+        result.success ? const Color(0xFF26A69A) : const Color(0xFFEF5350);
+    final String title = result.success
+        ? (isBuy ? 'Achat réussi' : 'Vente réussie')
+        : (isBuy ? 'Achat échoué' : 'Vente échouée');
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E1E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        icon: Icon(
+          result.success ? Icons.check_circle : Icons.error,
+          color: color,
+          size: 48,
+        ),
+        title: Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Text(
+          result.message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            style: ElevatedButton.styleFrom(backgroundColor: color),
+            child: const Text('OK', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<bool> _confirmTrade({required bool isBuy}) async {
@@ -394,7 +438,18 @@ class HistoryView extends StateMVC<HistoryPage> {
                 ),
                 onPressed: con.incrementQuantity,
               ),
-              const SizedBox(width: 12),
+              IconButton(
+                tooltip: 'Réinitialiser',
+                icon: const Icon(
+                  Icons.refresh,
+                  color: Colors.white54,
+                ),
+                onPressed: () {
+                  con.resetQuantity();
+                  setState(() {});
+                },
+              ),
+              const SizedBox(width: 4),
               Text(
                 'Total: \$${con.estimatedCost.toStringAsFixed(2)}',
                 style: const TextStyle(color: Colors.white54, fontSize: 13),

@@ -92,7 +92,7 @@ class RegisterController extends ControllerMVC {
       final exists = await UserDB.emailExists(normalizedEmail);
       if (exists) {
         isLoading = false;
-        emailError = 'Trrrrrrrrrrrrrrrrrhis email is already registered';
+        emailError = 'This email is already registered';
         setState(() {});
         return false;
       }

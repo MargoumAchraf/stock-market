@@ -12,11 +12,16 @@ import 'package:stock_market/model/Stock.dart';
 import 'package:stock_market/service/candle_aggregation.dart';
 import 'package:stock_market/service/mock_data.dart';
 
+class TradeResult {
+  final bool success;
+  final String message;
+  const TradeResult(this.success, this.message);
+}
+
 class HistoryController extends ControllerMVC {
   factory HistoryController() => _this ??= HistoryController._();
   static HistoryController? _this;
   HistoryController._() : super();
-
 
   static const String baseUrl = 'http://10.0.2.2:5001';
   static const Duration pollInterval = Duration(milliseconds: 200);
@@ -29,16 +34,31 @@ class HistoryController extends ControllerMVC {
 
   int tradeQuantity = 1;
 
- 
   Timer? _pollTimer;
   bool _fetching = false;
   double? livePrice;
-  bool? priceUp; 
-  String? liveError; 
+  bool? priceUp;
+  String? liveError;
+
+
+  void reset() {
+    stopPolling();
+    tradeQuantity = 1;
+    livePrice = null;
+    priceUp = null;
+    liveError = null;
+    dailyData = [];
+    displayData = [];
+    timeframe = Timeframe.day;
+    showAverage = false;
+    loading = true;
+    error = null;
+    resetQuantity();
+  }
 
   void startPolling(String symbol) {
     stopPolling();
-    _fetchLivePrice(symbol); 
+    _fetchLivePrice(symbol);
     _pollTimer = Timer.periodic(pollInterval, (_) => _fetchLivePrice(symbol));
   }
 
@@ -56,7 +76,7 @@ class HistoryController extends ControllerMVC {
   }
 
   Future<void> _fetchLivePrice(String symbol) async {
-    if (_fetching) return; 
+    if (_fetching) return;
     _fetching = true;
     try {
       final res = await http
@@ -67,8 +87,9 @@ class HistoryController extends ControllerMVC {
 
       if (res.statusCode == 200) {
         final body = jsonDecode(res.body);
-        final num? rate =
-            body is num ? body : (body['rate'] ?? body['price']) as num?;
+        final num? rate = body is num
+            ? body
+            : (body['rate'] ?? body['price']) as num?;
         if (rate != null) {
           final double newPrice = rate.toDouble();
           if (livePrice != null && newPrice != livePrice) {
@@ -111,26 +132,30 @@ class HistoryController extends ControllerMVC {
 
   double get estimatedCost => currentPrice * tradeQuantity;
 
-  Future<void> buy(String symbol) async {
-    final double totalPrice = currentPrice * tradeQuantity;
+  Future<TradeResult> buy(String symbol) async {
+    final int qty = tradeQuantity;
+    final double totalPrice = currentPrice * qty;
 
     final String? userId = await SessionManager.getUserId();
     if (userId == null) {
       SessionManager.logout();
-      return;
+      return const TradeResult(
+        false,
+        'Session expirée. Veuillez vous reconnecter.',
+      );
     }
 
     final userDB = UserDB();
     final rawUser = await UserDB.getUser();
     if (rawUser == null) {
-      return;
+      return const TradeResult(false, 'Utilisateur introuvable.');
     }
 
     final user = Map<String, dynamic>.from(rawUser);
     final double currentBalance = (user['balance'] as num).toDouble();
 
     if (currentBalance < totalPrice) {
-      return;
+      return const TradeResult(false, 'Solde insuffisant pour cet achat.');
     }
 
     final stockDB = StockDB();
@@ -139,7 +164,7 @@ class HistoryController extends ControllerMVC {
     if (existing != null) {
       final int oldQty = (existing['country'] as num).toInt();
       final double oldPrice = (existing['price'] as num).toDouble();
-      final int newQty = oldQty + tradeQuantity;
+      final int newQty = oldQty + qty;
       final double avgPrice = (oldPrice + totalPrice);
 
       await stockDB.updateStock(existing['id'] as String, {
@@ -148,13 +173,13 @@ class HistoryController extends ControllerMVC {
         'updatedAt': DateTime.now().toIso8601String(),
       });
     } else {
-      final double currentPricetotla = currentPrice * tradeQuantity;
+      final double currentPricetotla = currentPrice * qty;
       final Stock stock = Stock(
         id: Uuid().generateV4(),
         userId: userId,
         symbol: symbol,
         price: currentPricetotla,
-        country: tradeQuantity,
+        country: qty,
         changePercent: 0.0,
         updatedAt: DateTime.now().toIso8601String(),
       );
@@ -163,21 +188,30 @@ class HistoryController extends ControllerMVC {
 
     user['balance'] = currentBalance - totalPrice;
     await userDB.update(user);
+
+    return TradeResult(
+      true,
+      'Vous avez acheté $qty × $symbol pour \$${totalPrice.toStringAsFixed(2)}.',
+    );
   }
 
-  Future<void> sell(String symbol) async {
-    final double totalPrice = currentPrice * tradeQuantity;
+  Future<TradeResult> sell(String symbol) async {
+    final int qty = tradeQuantity;
+    final double totalPrice = currentPrice * qty;
 
     final String? userId = await SessionManager.getUserId();
     if (userId == null) {
       SessionManager.logout();
-      return;
+      return const TradeResult(
+        false,
+        'Session expirée. Veuillez vous reconnecter.',
+      );
     }
 
     final userDB = UserDB();
     final rawUser = await UserDB.getUser();
     if (rawUser == null) {
-      return;
+      return const TradeResult(false, 'Utilisateur introuvable.');
     }
 
     final user = Map<String, dynamic>.from(rawUser);
@@ -187,16 +221,19 @@ class HistoryController extends ControllerMVC {
     final existing = await stockDB.getUserStock(userId, symbol);
 
     if (existing == null) {
-      return;
+      return TradeResult(false, 'Vous ne possédez pas d\'actions $symbol.');
     }
 
     final int ownedQty = (existing['country'] as num).toInt();
 
-    if (tradeQuantity > ownedQty) {
-      return;
+    if (qty > ownedQty) {
+      return TradeResult(
+        false,
+        'Quantité insuffisante : vous possédez $ownedQty × $symbol.',
+      );
     }
 
-    final int remaining = ownedQty - tradeQuantity;
+    final int remaining = ownedQty - qty;
 
     if (remaining == 0) {
       await stockDB.deleteStock(existing['id'] as String);
@@ -209,6 +246,11 @@ class HistoryController extends ControllerMVC {
 
     user['balance'] = currentBalance + totalPrice;
     await userDB.update(user);
+
+    return TradeResult(
+      true,
+      'Vous avez vendu $qty × $symbol pour \$${totalPrice.toStringAsFixed(2)}.',
+    );
   }
 
   Future<void> loadData(String symbol) async {
@@ -266,5 +308,5 @@ class HistoryController extends ControllerMVC {
     }
   }
 
-  double get currentPrice => displayData.last.close ?? 0;
+  double get currentPrice => displayData.first.close ?? 0;
 }
